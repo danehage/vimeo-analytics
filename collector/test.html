@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vimeo Deep Analytics — Test Page</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }
+    h1 { font-size: 20px; }
+    .status { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #166534; }
+    .embed-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin: 20px 0; }
+    .embed-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .config { background: #f5f5f5; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .config pre { margin: 0; font-size: 12px; }
+    .log { background: #1a1a1a; color: #86efac; border-radius: 8px; padding: 16px; margin: 20px 0; font-family: monospace; font-size: 11px; max-height: 300px; overflow-y: auto; }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #333; }
+  </style>
+</head>
+<body>
+  <h1>Vimeo Deep Analytics — Test Page</h1>
+  <div class="status">
+    Collector active — events are being sent to <code id="endpoint-display"></code>
+  </div>
+
+  <div class="embed-wrapper">
+    <iframe src="https://player.vimeo.com/video/1050718498" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  </div>
+
+  <div class="config">
+    <strong>Configuration</strong>
+    <pre>
+Session ID:     <span id="session-id">loading...</span>
+Fingerprint ID: <span id="fingerprint-id">loading...</span>
+Video ID:       <span id="video-id">loading...</span>
+Viewer ID:      <span id="viewer-id">null (anonymous)</span>
+    </pre>
+  </div>
+
+  <div>
+    <strong>Event Log</strong>
+    <div class="log" id="event-log">Waiting for events...</div>
+  </div>
+
+  <script src="https://player.vimeo.com/api/player.js"></script>
+  <script>
+    window.VimeoAnalyticsConfig = {
+      endpoint: 'http://localhost:8787/api/events'
+    };
+
+    // Intercept sendBeacon to also log events
+    const origBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function(url, data) {
+      try {
+        const parsed = JSON.parse(data instanceof Blob ? '' : data);
+        logEvent(parsed);
+      } catch(e) {
+        // blob — read it
+        if (data instanceof Blob) {
+          data.text().then(t => {
+            try { logEvent(JSON.parse(t)); } catch(e2) {}
+          });
+        }
+      }
+      return origBeacon(url, data);
+    };
+
+    function logEvent(ev) {
+      const log = document.getElementById('event-log');
+      if (log.textContent === 'Waiting for events...') log.textContent = '';
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${ev.event_type} — playhead: ${ev.playhead?.toFixed(1)}s — video: ${ev.video_id}`;
+      log.prepend(entry);
+
+      // Update config display
+      if (ev.session_id) document.getElementById('session-id').textContent = ev.session_id;
+      if (ev.fingerprint_id) document.getElementById('fingerprint-id').textContent = ev.fingerprint_id;
+      if (ev.video_id) document.getElementById('video-id').textContent = ev.video_id;
+    }
+
+    document.getElementById('endpoint-display').textContent = window.VimeoAnalyticsConfig.endpoint;
+  </script>
+  <script src="collector.js"></script>
+</body>
+</html>
