@@ -5,10 +5,10 @@ export async function handleEvents(request, sql) {
     embed_url, event_type, playhead, timestamp, video_duration, payload
   } = body;
 
-  // Insert event
+  // Insert event (omit event_id to let Postgres generate it via gen_random_uuid())
   await sql`
-    INSERT INTO events (event_id, session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload)
-    VALUES (${event_id}, ${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
+    INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload)
+    VALUES (${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
   `;
 
   // Upsert session

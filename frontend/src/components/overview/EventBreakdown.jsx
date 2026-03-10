@@ -1,23 +1,49 @@
-import { V } from '../../constants/theme';
+import { V, EVENT_COLORS } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
+import { usePolling } from '../../hooks/usePolling';
 
-const EVENT_BREAKDOWN = [
-  { event: "play", count: 847, color: V.teal },
-  { event: "pause", count: 623, color: V.textLight },
-  { event: "seeked", count: 412, color: V.purple },
-  { event: "texttrackchange", count: 198, color: V.green },
-  { event: "qualitychange", count: 89, color: V.amber },
-  { event: "volumechange", count: 67, color: V.textMuted },
-  { event: "bufferstart", count: 34, color: V.red },
-];
+const EVENT_ORDER = ['play', 'pause', 'seeked', 'texttrackchange', 'qualitychange', 'volumechange', 'bufferstart'];
 
 export default function EventBreakdown() {
-  const maxCount = Math.max(...EVENT_BREAKDOWN.map(e => e.count));
+  const { data } = usePolling('/api/analytics/recent-events', 10000);
+
+  // Count events from the recent-events endpoint as a proxy, or fall back
+  const counts = {};
+  if (data && Array.isArray(data)) {
+    data.forEach(ev => {
+      counts[ev.event_type] = (counts[ev.event_type] || 0) + 1;
+    });
+  }
+
+  // Also fetch the summary for total seek/buffer counts
+  const { data: summary } = usePolling('/api/analytics/summary');
+
+  // Build breakdown from summary data if available, otherwise from recent events
+  const breakdown = EVENT_ORDER.map(event => ({
+    event,
+    count: event === 'seeked' ? (summary?.seek_events || counts[event] || 0)
+      : event === 'bufferstart' ? (counts[event] || 0)
+      : (counts[event] || 0),
+    color: EVENT_COLORS[event] || V.textMuted,
+  })).filter(e => e.count > 0);
+
+  if (breakdown.length === 0) {
+    // Show placeholder
+    return (
+      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+        <SectionHeader title="Event breakdown" />
+        <div style={{ fontSize: 12, color: V.textLight, padding: "20px 0" }}>Waiting for events...</div>
+      </div>
+    );
+  }
+
+  const maxCount = Math.max(...breakdown.map(e => e.count));
+
   return (
     <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
       <SectionHeader title="Event breakdown" />
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {EVENT_BREAKDOWN.map(({ event, count, color }) => (
+        {breakdown.map(({ event, count, color }) => (
           <div key={event}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

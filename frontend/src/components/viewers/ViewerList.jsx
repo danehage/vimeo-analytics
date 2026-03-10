@@ -2,121 +2,46 @@ import { useState } from 'react';
 import { V } from '../../constants/theme';
 import FingerprintBadge from '../shared/FingerprintBadge';
 import IdentityBadge from '../shared/IdentityBadge';
-
-const VIEWERS = [
-  {
-    fingerprintId: "fp_a3c8e1",
-    identifiedAs: "j.smith@corp.com",
-    identifiedOn: "Mar 5, 2026",
-    identifiedVia: "SSO login on intranet.corp.com",
-    status: "identified",
-    firstSeen: "Feb 19, 2026",
-    lastSeen: "Mar 5, 2026",
-    totalSessions: 7,
-    totalVideos: 3,
-    totalWatchMins: 94,
-    avgWatchPct: 81,
-    captionsAlwaysOn: true,
-    preferredQuality: "1080p",
-    sessions: [
-      { id: "#a3f9b2", video: "Security Training Module 3", date: "Mar 4, 2026", watchedPct: 74, completed: false },
-      { id: "#c82e41", video: "Security Training Module 3", date: "Mar 4, 2026", watchedPct: 100, completed: true },
-      { id: "#d91b33", video: "Onboarding: Company Culture", date: "Feb 28, 2026", watchedPct: 100, completed: true },
-      { id: "#e74f22", video: "AWS Marketplace Global Expansion", date: "Feb 19, 2026", watchedPct: 91, completed: false },
-      { id: "#f00c11", video: "Security Training Module 3", date: "Feb 19, 2026", watchedPct: 42, completed: false },
-    ],
-    videos: [
-      { title: "Security Training Module 3", sessions: 3, avgPct: 72, completed: true, lastWatched: "Mar 4, 2026" },
-      { title: "Onboarding: Company Culture", sessions: 2, avgPct: 100, completed: true, lastWatched: "Feb 28, 2026" },
-      { title: "AWS Marketplace Global Expansion", sessions: 2, avgPct: 74, completed: false, lastWatched: "Feb 19, 2026" },
-    ],
-  },
-  {
-    fingerprintId: "fp_b7d2f9",
-    identifiedAs: null,
-    status: "anonymous",
-    firstSeen: "Mar 3, 2026",
-    lastSeen: "Mar 5, 2026",
-    totalSessions: 3,
-    totalVideos: 2,
-    totalWatchMins: 12,
-    avgWatchPct: 31,
-    captionsAlwaysOn: true,
-    preferredQuality: "540p",
-    sessions: [
-      { id: "#f17d93", video: "Security Training Module 3", date: "Mar 3, 2026", watchedPct: 18, completed: false },
-      { id: "#g22a18", video: "Security Training Module 3", date: "Mar 4, 2026", watchedPct: 24, completed: false },
-      { id: "#h91c04", video: "Benefits Overview 2026", date: "Mar 5, 2026", watchedPct: 51, completed: false },
-    ],
-    videos: [
-      { title: "Security Training Module 3", sessions: 2, avgPct: 21, completed: false, lastWatched: "Mar 4, 2026" },
-      { title: "Benefits Overview 2026", sessions: 1, avgPct: 51, completed: false, lastWatched: "Mar 5, 2026" },
-    ],
-    insight: "This viewer has attempted Security Training Module 3 twice and abandoned both times under 25%. Combined with consistent Spanish captions and repeated quality drops, they may be on a poor connection or a non-English speaker struggling with the content.",
-  },
-  {
-    fingerprintId: "fp_c1e5a3",
-    identifiedAs: "m.chen@corp.com",
-    identifiedOn: "Mar 1, 2026",
-    identifiedVia: "Form submission on hr.corp.com",
-    status: "identified",
-    firstSeen: "Feb 24, 2026",
-    lastSeen: "Mar 4, 2026",
-    totalSessions: 4,
-    totalVideos: 2,
-    totalWatchMins: 67,
-    avgWatchPct: 68,
-    captionsAlwaysOn: false,
-    preferredQuality: "720p",
-    sessions: [
-      { id: "#i44d91", video: "Benefits Overview 2026", date: "Mar 4, 2026", watchedPct: 88, completed: false },
-      { id: "#j83b72", video: "Benefits Overview 2026", date: "Mar 1, 2026", watchedPct: 51, completed: false },
-      { id: "#k12c55", video: "CEO Town Hall - Jan 2026", date: "Feb 28, 2026", watchedPct: 61, completed: false },
-      { id: "#l90a34", video: "CEO Town Hall - Jan 2026", date: "Feb 24, 2026", watchedPct: 71, completed: false },
-    ],
-    videos: [
-      { title: "Benefits Overview 2026", sessions: 2, avgPct: 70, completed: false, lastWatched: "Mar 4, 2026" },
-      { title: "CEO Town Hall - Jan 2026", sessions: 2, avgPct: 66, completed: false, lastWatched: "Feb 28, 2026" },
-    ],
-  },
-  {
-    fingerprintId: "fp_d9f3b8",
-    identifiedAs: null,
-    status: "anonymous",
-    firstSeen: "Mar 5, 2026",
-    lastSeen: "Mar 5, 2026",
-    totalSessions: 1,
-    totalVideos: 1,
-    totalWatchMins: 1,
-    avgWatchPct: 91,
-    captionsAlwaysOn: false,
-    preferredQuality: "1080p",
-    sessions: [
-      { id: "#b55a07", video: "AWS Marketplace Global Expansion", date: "Mar 5, 2026", watchedPct: 91, completed: false },
-    ],
-    videos: [
-      { title: "AWS Marketplace Global Expansion", sessions: 1, avgPct: 91, completed: false, lastWatched: "Mar 5, 2026" },
-    ],
-  },
-];
-
-export { VIEWERS };
+import { usePolling } from '../../hooks/usePolling';
 
 export default function ViewerList({ onSelect }) {
   const [filter, setFilter] = useState("all");
-  const filtered = filter === "all" ? VIEWERS
-    : filter === "identified" ? VIEWERS.filter(v => v.status === "identified")
-    : VIEWERS.filter(v => v.status === "anonymous");
+  const { data, loading } = usePolling('/api/analytics/viewers');
+
+  const summary = data?.summary || { total: 0, identified: 0, anonymous: 0, avg_engagement: 0 };
+
+  const viewers = (data?.viewers || []).map(v => ({
+    fingerprintId: v.fingerprint_id,
+    identifiedAs: v.viewer_id || null,
+    identifiedOn: v.identified_at ? new Date(v.identified_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null,
+    identifiedVia: v.identified_via || null,
+    status: v.viewer_id ? "identified" : "anonymous",
+    firstSeen: v.first_seen ? new Date(v.first_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+    lastSeen: v.last_seen ? new Date(v.last_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+    totalSessions: v.total_sessions || 0,
+    totalVideos: v.unique_videos || 0,
+    totalWatchMins: Math.round(v.total_watch_mins || 0),
+    avgWatchPct: Math.round(v.avg_engagement || 0),
+    captionsAlwaysOn: (v.caption_events || 0) > 0,
+  }));
+
+  const filtered = filter === "all" ? viewers
+    : filter === "identified" ? viewers.filter(v => v.status === "identified")
+    : viewers.filter(v => v.status === "anonymous");
+
+  if (loading && viewers.length === 0) {
+    return <div style={{ fontSize: 13, color: V.textMuted, padding: 20 }}>Loading viewers...</div>;
+  }
 
   return (
     <div>
       {/* Header stats */}
       <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
         {[
-          ["Total viewers", VIEWERS.length, V.text],
-          ["Identified", VIEWERS.filter(v => v.status === "identified").length, V.green],
-          ["Anonymous", VIEWERS.filter(v => v.status === "anonymous").length, V.textMuted],
-          ["Avg engagement", "68%", V.teal],
+          ["Total viewers", summary.total, V.text],
+          ["Identified", summary.identified, V.green],
+          ["Anonymous", summary.anonymous, V.textMuted],
+          ["Avg engagement", `${Math.round(summary.avg_engagement || 0)}%`, V.teal],
         ].map(([label, val, color]) => (
           <div key={label} style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "14px 20px", flex: 1 }}>
             <div style={{ fontSize: 11, color: V.textMuted, marginBottom: 4 }}>{label}</div>
@@ -127,9 +52,9 @@ export default function ViewerList({ onSelect }) {
 
       {/* How it works banner */}
       <div style={{ background: V.enterpriseBg, border: `1px solid ${V.enterpriseBorder}`, borderRadius: 8, padding: "12px 18px", marginBottom: 20, display: "flex", alignItems: "flex-start", gap: 12 }}>
-        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>\u2726</span>
+        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>✦</span>
         <div style={{ fontSize: 12, color: V.enterpriseText, lineHeight: 1.7 }}>
-          <strong>How viewer identity works:</strong> Every session starts anonymous, tracked by browser fingerprint. When a viewer logs in or submits a form on an instrumented page, their identity is resolved and <em>all prior anonymous sessions</em> from that fingerprint are retroactively attributed to them \u2014 no data is lost.
+          <strong>How viewer identity works:</strong> Every session starts anonymous, tracked by browser fingerprint. When a viewer logs in or submits a form on an instrumented page, their identity is resolved and <em>all prior anonymous sessions</em> from that fingerprint are retroactively attributed to them — no data is lost.
         </div>
       </div>
 
@@ -196,7 +121,7 @@ export default function ViewerList({ onSelect }) {
                       color: viewer.status === "identified" ? V.white : V.textLight,
                       fontWeight: 700, flexShrink: 0,
                     }}>
-                      {viewer.status === "identified" ? viewer.identifiedAs.split(".")[0][0].toUpperCase() : "?"}
+                      {viewer.status === "identified" && viewer.identifiedAs ? viewer.identifiedAs.split(/[.@]/)[0][0].toUpperCase() : "?"}
                     </div>
                     <div>
                       {viewer.status === "identified"
@@ -234,7 +159,7 @@ export default function ViewerList({ onSelect }) {
                 </td>
                 <td style={{ padding: "12px 14px", color: V.textMuted, fontSize: 12 }}>{viewer.lastSeen}</td>
                 <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                  <span style={{ color: V.teal, fontSize: 16 }}>\u203A</span>
+                  <span style={{ color: V.teal, fontSize: 16 }}>›</span>
                 </td>
               </tr>
             ))}

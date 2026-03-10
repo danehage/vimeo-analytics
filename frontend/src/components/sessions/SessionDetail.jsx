@@ -1,19 +1,74 @@
-import { V, fmtSecs } from '../../constants/theme';
+import { V, fmtSecs, EVENT_COLORS } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
 import SessionScrubber from './SessionScrubber';
+import { usePolling } from '../../hooks/usePolling';
+
+const EVENT_ICONS = {
+  play: "▶", pause: "⏸", ended: "✓", seeked: "⏭",
+  texttrackchange: "CC", qualitychange: "⚙", volumechange: "♪",
+  bufferstart: "⧗", bufferend: "▶", session_end: "■",
+};
+
+function buildLabel(ev) {
+  switch (ev.event_type) {
+    case 'play': return ev.playhead > 0 ? 'Resumed' : 'Started playback';
+    case 'pause': return 'Paused';
+    case 'ended': return `Completed — 100% watched`;
+    case 'seeked': return `Seeked → ${fmtSecs(ev.playhead)}`;
+    case 'texttrackchange': {
+      const p = ev.payload || {};
+      return `Captions ${p.label ? `turned on (${p.label})` : 'changed'}`;
+    }
+    case 'qualitychange': return `Quality changed to ${ev.payload?.quality || 'auto'}`;
+    case 'bufferstart': return 'Buffering started';
+    case 'bufferend': return 'Buffering ended';
+    case 'volumechange': return `Volume changed`;
+    case 'session_end': return 'Session ended';
+    default: return ev.event_type;
+  }
+}
 
 export default function SessionDetail({ session, onBack }) {
-  const nonTimeUpdates = session.events.filter(e => e.type !== "timeupdate");
-  const hasCaptions = session.events.some(e => e.type === "texttrackchange");
-  const hasBuffer = session.events.some(e => e.type === "bufferstart");
-  const seekCount = session.events.filter(e => e.type === "seeked").length;
+  const { data, loading } = usePolling(`/api/analytics/sessions/${session.session_id}`, 60000);
+
+  const sessionData = data?.session || session;
+  const events = (data?.events || []).map(ev => ({
+    type: ev.event_type,
+    time: fmtSecs(ev.playhead || 0),
+    playhead: ev.playhead || 0,
+    icon: EVENT_ICONS[ev.event_type] || "·",
+    color: EVENT_COLORS[ev.event_type] || V.textLight,
+    label: buildLabel(ev),
+    payload: ev.payload,
+  }));
+
+  const duration = sessionData.video_duration || sessionData.duration || session.duration || 0;
+  const watchedPct = sessionData.percent_watched ?? session.watchedPct ?? 0;
+  const completed = sessionData.completed ?? session.completed;
+  const video = sessionData.video_title || session.video || session.videoId;
+  const embedUrl = sessionData.embed_url || session.embedUrl || '';
+  const date = session.date || (sessionData.started_at ? new Date(sessionData.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
+  const time = session.time || (sessionData.started_at ? new Date(sessionData.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '');
+
+  const nonTimeUpdates = events.filter(e => e.type !== "timeupdate");
+  const hasCaptions = events.some(e => e.type === "texttrackchange");
+  const hasBuffer = events.some(e => e.type === "bufferstart");
+  const seekCount = events.filter(e => e.type === "seeked").length;
+  const bufferCount = events.filter(e => e.type === "bufferstart").length;
+  const qualityCount = events.filter(e => e.type === "qualitychange").length;
+
+  // Build session-like object for scrubber
+  const scrubberSession = {
+    duration,
+    events,
+  };
 
   return (
     <div>
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: V.textMuted }}>
-        <span onClick={onBack} style={{ cursor: "pointer", color: V.teal, fontWeight: 500 }}>\u2190 Sessions</span>
-        <span>\u203A</span>
+        <span onClick={onBack} style={{ cursor: "pointer", color: V.teal, fontWeight: 500 }}>← Sessions</span>
+        <span>›</span>
         <span style={{ color: V.text }}>Session {session.shortId}</span>
       </div>
 
@@ -24,31 +79,33 @@ export default function SessionDetail({ session, onBack }) {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <span style={{ fontFamily: "monospace", fontSize: 14, fontWeight: 700, color: V.text }}>Session {session.shortId}</span>
               <span style={{
-                background: session.source === "embed" ? V.tealLight : V.purpleLight,
-                color: session.source === "embed" ? V.teal : V.purple,
+                background: V.tealLight,
+                color: V.teal,
                 fontSize: 11,
                 fontWeight: 600,
                 padding: "2px 8px",
                 borderRadius: 4,
               }}>
-                {session.source}
+                embed
               </span>
-              {session.completed && (
-                <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>\u2713 Completed</span>
+              {completed ? (
+                <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>✓ Completed</span>
+              ) : (
+                <span style={{ background: "#fff8f0", color: V.amber, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{Math.round(watchedPct)}% watched</span>
               )}
-              {!session.completed && (
-                <span style={{ background: "#fff8f0", color: V.amber, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{session.watchedPct}% watched</span>
+              {session.isLive && (
+                <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4 }}>live</span>
               )}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: V.textMid, marginBottom: 2 }}>{session.video}</div>
-            <div style={{ fontSize: 12, color: V.textLight }}>{session.date} at {session.time} \u00B7 {session.embedUrl}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: V.textMid, marginBottom: 2 }}>{video}</div>
+            <div style={{ fontSize: 12, color: V.textLight }}>{date} at {time} · {embedUrl}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {hasCaptions && (
               <div style={{ background: V.tealLight, border: `1px solid ${V.tealMid}`, borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.teal, fontWeight: 600 }}>CC On</div>
             )}
             {hasBuffer && (
-              <div style={{ background: V.redLight, border: "1px solid #fecaca", borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.red, fontWeight: 600 }}>\u29D7 Buffered</div>
+              <div style={{ background: V.redLight, border: "1px solid #fecaca", borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.red, fontWeight: 600 }}>⧗ Buffered</div>
             )}
           </div>
         </div>
@@ -56,12 +113,12 @@ export default function SessionDetail({ session, onBack }) {
         {/* Quick stats */}
         <div style={{ display: "flex", gap: 24, paddingTop: 16, borderTop: `1px solid ${V.borderLight}` }}>
           {[
-            ["Duration watched", fmtSecs(Math.round(session.duration * session.watchedPct / 100)), V.text],
-            ["Total video length", fmtSecs(session.duration), V.textMuted],
-            ["Seek events", session.seeks, seekCount > 2 ? V.purple : V.textMid],
-            ["Quality changes", session.qualityChanges, session.qualityChanges > 1 ? V.amber : V.textMid],
-            ["Captions enabled", session.captionsEnabled ? "Yes" : "No", session.captionsEnabled ? V.green : V.textMuted],
-            ["Buffer events", session.buffers, session.buffers > 0 ? V.red : V.green],
+            ["Duration watched", duration > 0 ? fmtSecs(Math.round(duration * watchedPct / 100)) : '—', V.text],
+            ["Total video length", duration > 0 ? fmtSecs(duration) : '—', V.textMuted],
+            ["Seek events", seekCount, seekCount > 2 ? V.purple : V.textMid],
+            ["Quality changes", qualityCount, qualityCount > 1 ? V.amber : V.textMid],
+            ["Captions enabled", hasCaptions ? "Yes" : "No", hasCaptions ? V.green : V.textMuted],
+            ["Buffer events", bufferCount, bufferCount > 0 ? V.red : V.green],
           ].map(([label, val, color]) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: V.textLight, marginBottom: 3 }}>{label}</div>
@@ -72,19 +129,24 @@ export default function SessionDetail({ session, onBack }) {
       </div>
 
       {/* Scrubber */}
-      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px", marginBottom: 16 }}>
-        <SectionHeader title="Watch map" sub="Visual reconstruction of what was watched, skipped, and rewound" />
-        <SessionScrubber session={session} />
-      </div>
+      {events.length > 0 && (
+        <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px", marginBottom: 16 }}>
+          <SectionHeader title="Watch map" sub="Visual reconstruction of what was watched, skipped, and rewound" />
+          <SessionScrubber session={scrubberSession} />
+        </div>
+      )}
 
       {/* Event timeline */}
       <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
-        <SectionHeader title="Event timeline" sub={`${nonTimeUpdates.length} significant events captured`} />
+        <SectionHeader title="Event timeline" sub={loading ? 'Loading events...' : `${nonTimeUpdates.length} significant events captured`} />
+        {nonTimeUpdates.length === 0 && !loading && (
+          <div style={{ fontSize: 12, color: V.textLight, padding: "12px 0" }}>No events recorded yet — session may still be in progress.</div>
+        )}
         <div style={{ position: "relative" }}>
           {/* Vertical line */}
           <div style={{ position: "absolute", left: 15, top: 8, bottom: 8, width: 1, background: V.borderLight }} />
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {session.events.filter(e => e.type !== "timeupdate").map((ev, i) => (
+            {nonTimeUpdates.map((ev, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "10px 0", position: "relative" }}>
                 {/* Icon */}
                 <div style={{
@@ -113,28 +175,30 @@ export default function SessionDetail({ session, onBack }) {
                       <span style={{ background: V.tealLight, color: V.green, fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 3 }}>accessibility</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: V.textLight }}>
-                    Playhead: {fmtSecs(ev.playhead)} / {fmtSecs(session.duration)}
-                    <span style={{ display: "inline-block", width: 80, height: 3, background: V.borderLight, borderRadius: 99, margin: "0 8px -1px", overflow: "hidden" }}>
-                      <span style={{ display: "block", width: `${(ev.playhead / session.duration) * 100}%`, height: "100%", background: V.teal, borderRadius: 99 }} />
-                    </span>
-                    {Math.round((ev.playhead / session.duration) * 100)}%
-                  </div>
+                  {duration > 0 && (
+                    <div style={{ fontSize: 11, color: V.textLight }}>
+                      Playhead: {fmtSecs(ev.playhead)} / {fmtSecs(duration)}
+                      <span style={{ display: "inline-block", width: 80, height: 3, background: V.borderLight, borderRadius: 99, margin: "0 8px -1px", overflow: "hidden" }}>
+                        <span style={{ display: "block", width: `${(ev.playhead / duration) * 100}%`, height: "100%", background: V.teal, borderRadius: 99 }} />
+                      </span>
+                      {Math.round((ev.playhead / duration) * 100)}%
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Insight callout -- only show for sessions with interesting patterns */}
-        {session.id === "a3f9b2" && (
-          <div style={{ marginTop: 16, padding: "12px 16px", background: "#faf5ff", border: "1px solid #ddd0f7", borderRadius: 8, fontSize: 12, color: V.enterpriseText, lineHeight: 1.6 }}>
-            <strong>This viewer rewound to 8:10 after reaching 9:20.</strong> Combined with turning captions on at 6:45, they may have had difficulty understanding the content in that section. Consider reviewing the 8-9 minute segment for clarity.
+        {/* Dynamic insight callouts */}
+        {bufferCount >= 3 && (
+          <div style={{ marginTop: 16, padding: "12px 16px", background: V.redLight, border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, color: "#991b1b", lineHeight: 1.6 }}>
+            <strong>This session had {bufferCount} buffer events{watchedPct < 50 ? ` and was abandoned at ${Math.round(watchedPct)}%` : ''}.</strong> This may indicate a network issue on the embed page — compare with buffer rates from other sessions on the same URL.
           </div>
         )}
-        {session.id === "f17d93" && (
-          <div style={{ marginTop: 16, padding: "12px 16px", background: V.redLight, border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, color: "#991b1b", lineHeight: 1.6 }}>
-            <strong>This session had 3 buffer events and was abandoned at 18%.</strong> The viewer dropped their quality twice before stopping. This may indicate a network issue on the embed page \u2014 compare with buffer rates from other sessions on the same URL.
+        {seekCount >= 2 && hasCaptions && bufferCount < 3 && (
+          <div style={{ marginTop: 16, padding: "12px 16px", background: "#faf5ff", border: "1px solid #ddd0f7", borderRadius: 8, fontSize: 12, color: V.enterpriseText, lineHeight: 1.6 }}>
+            <strong>This viewer sought multiple times and enabled captions.</strong> They may have had difficulty understanding the content. Consider reviewing the sections they replayed.
           </div>
         )}
       </div>

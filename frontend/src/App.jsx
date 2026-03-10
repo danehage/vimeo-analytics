@@ -79,7 +79,7 @@ export default function App() {
                   <div style={{ fontSize: 13, color: V.textMuted }}>Player event telemetry from embedded players and vimeo.com views</div>
                 </div>
                 <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 6, padding: "6px 12px", fontSize: 13, color: V.textMid, cursor: "pointer" }}>
-                  Feb 3, 2026 – Mar 5, 2026 ▾
+                  All time ▾
                 </div>
               </div>
 
