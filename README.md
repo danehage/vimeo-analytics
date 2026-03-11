@@ -226,20 +226,26 @@ See `schema.sql` for the full schema with indexes.
 
 ## Design System
 
-The UI deliberately matches Vimeo's analytics dashboard so it looks like it was built by Vimeo's design team. Key tokens:
+The UI uses a dark theme matching Vimeo's live analytics dashboard at vimeo.com/analytics, so it looks like it was built by Vimeo's design team. Color tokens were extracted directly from the production site.
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `teal` | `#1ab7ea` | Vimeo primary accent |
-| `bg` | `#f2f2f0` | Page background |
-| `white` | `#ffffff` | Card backgrounds |
-| `border` | `#e5e5e3` | All borders |
+| `bg` | `#0e1216` | Page background |
+| `white` | `#151b21` | Card/panel backgrounds |
+| `tableHeaderBg` | `#1d242c` | Table headers, input backgrounds |
+| `teal` | `#03c1eb` | Vimeo primary accent |
+| `text` | `#f9fafb` | Primary text |
+| `textMid` | `#e4e9ef` | Secondary text |
+| `textMuted` | `#b6c0cc` | Muted text |
+| `textLight` | `#7282a3` | Disabled/hint text |
+| `border` | `rgba(114,130,163,0.12)` | All borders (subtle) |
+| `active` | `rgba(190,227,248,0.16)` | Hover/active highlights |
 | `purple` | `#8b5cf6` | Seek events |
 | `red` | `#e5484d` | Buffer incidents |
 | `green` | `#30a46c` | Completions, identified viewers |
 | `amber` | `#f59e0b` | Quality changes, warnings |
 
-Font stack: Aktiv Grotesk, Nunito Sans, DM Sans, system sans-serif.
+Card border-radius: 12px. Font stack: Aktiv Grotesk, Nunito Sans, DM Sans, system sans-serif.
 
 ---
 
