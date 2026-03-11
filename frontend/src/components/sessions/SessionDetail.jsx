@@ -73,7 +73,7 @@ export default function SessionDetail({ session, onBack }) {
       </div>
 
       {/* Session header */}
-      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px", marginBottom: 16 }}>
+      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -91,7 +91,7 @@ export default function SessionDetail({ session, onBack }) {
               {completed ? (
                 <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>✓ Completed</span>
               ) : (
-                <span style={{ background: "#fff8f0", color: V.amber, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{Math.round(watchedPct)}% watched</span>
+                <span style={{ background: V.amberLight, color: V.amber, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{Math.round(watchedPct)}% watched</span>
               )}
               {session.isLive && (
                 <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4 }}>live</span>
@@ -105,7 +105,7 @@ export default function SessionDetail({ session, onBack }) {
               <div style={{ background: V.tealLight, border: `1px solid ${V.tealMid}`, borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.teal, fontWeight: 600 }}>CC On</div>
             )}
             {hasBuffer && (
-              <div style={{ background: V.redLight, border: "1px solid #fecaca", borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.red, fontWeight: 600 }}>⧗ Buffered</div>
+              <div style={{ background: V.redLight, border: `1px solid rgba(229,62,62,0.25)`, borderRadius: 6, padding: "6px 10px", fontSize: 12, color: V.red, fontWeight: 600 }}>⧗ Buffered</div>
             )}
           </div>
         </div>
@@ -130,14 +130,14 @@ export default function SessionDetail({ session, onBack }) {
 
       {/* Scrubber */}
       {events.length > 0 && (
-        <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px", marginBottom: 16 }}>
+        <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px", marginBottom: 16 }}>
           <SectionHeader title="Watch map" sub="Visual reconstruction of what was watched, skipped, and rewound" />
           <SessionScrubber session={scrubberSession} />
         </div>
       )}
 
       {/* Event timeline */}
-      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
         <SectionHeader title="Event timeline" sub={loading ? 'Loading events...' : `${nonTimeUpdates.length} significant events captured`} />
         {nonTimeUpdates.length === 0 && !loading && (
           <div style={{ fontSize: 12, color: V.textLight, padding: "12px 0" }}>No events recorded yet — session may still be in progress.</div>
@@ -178,7 +178,7 @@ export default function SessionDetail({ session, onBack }) {
                   {duration > 0 && (
                     <div style={{ fontSize: 11, color: V.textLight }}>
                       Playhead: {fmtSecs(ev.playhead)} / {fmtSecs(duration)}
-                      <span style={{ display: "inline-block", width: 80, height: 3, background: V.borderLight, borderRadius: 99, margin: "0 8px -1px", overflow: "hidden" }}>
+                      <span style={{ display: "inline-block", width: 80, height: 3, background: "rgba(114,130,163,0.15)", borderRadius: 99, margin: "0 8px -1px", overflow: "hidden" }}>
                         <span style={{ display: "block", width: `${(ev.playhead / duration) * 100}%`, height: "100%", background: V.teal, borderRadius: 99 }} />
                       </span>
                       {Math.round((ev.playhead / duration) * 100)}%
@@ -192,12 +192,12 @@ export default function SessionDetail({ session, onBack }) {
 
         {/* Dynamic insight callouts */}
         {bufferCount >= 3 && (
-          <div style={{ marginTop: 16, padding: "12px 16px", background: V.redLight, border: "1px solid #fecaca", borderRadius: 8, fontSize: 12, color: "#991b1b", lineHeight: 1.6 }}>
+          <div style={{ marginTop: 16, padding: "12px 16px", background: V.redLight, border: "1px solid rgba(229,62,62,0.25)", borderRadius: V.cardRadius, fontSize: 12, color: V.red, lineHeight: 1.6 }}>
             <strong>This session had {bufferCount} buffer events{watchedPct < 50 ? ` and was abandoned at ${Math.round(watchedPct)}%` : ''}.</strong> This may indicate a network issue on the embed page — compare with buffer rates from other sessions on the same URL.
           </div>
         )}
         {seekCount >= 2 && hasCaptions && bufferCount < 3 && (
-          <div style={{ marginTop: 16, padding: "12px 16px", background: "#faf5ff", border: "1px solid #ddd0f7", borderRadius: 8, fontSize: 12, color: V.enterpriseText, lineHeight: 1.6 }}>
+          <div style={{ marginTop: 16, padding: "12px 16px", background: V.purpleLight, border: `1px solid ${V.enterpriseBorder}`, borderRadius: V.cardRadius, fontSize: 12, color: V.enterpriseText, lineHeight: 1.6 }}>
             <strong>This viewer sought multiple times and enabled captions.</strong> They may have had difficulty understanding the content. Consider reviewing the sections they replayed.
           </div>
         )}

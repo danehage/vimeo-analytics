@@ -22,7 +22,7 @@ export default function TabBar({ activeTab, onTabChange }) {
           display: "flex", alignItems: "center", gap: 6,
         }}>
           {label}
-          {isNew && <span style={{ background: V.tealLight, color: V.teal, fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}>NEW</span>}
+          {isNew && <span style={{ background: V.tealLight, color: V.teal, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 3 }}>NEW</span>}
         </div>
       ))}
     </div>

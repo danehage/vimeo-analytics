@@ -54,12 +54,12 @@ export default function App() {
                 <StatCard label="Unique viewers" value="5" />
                 <StatCard label="Total time watched" value="10:00" />
               </div>
-              <div style={{ background: "linear-gradient(135deg, #f0f9ff, #faf7ff)", border: `1px solid ${V.tealMid}`, borderRadius: 8, padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ background: V.tealLight, border: `1px solid ${V.tealMid}`, borderRadius: V.cardRadius, padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: V.text, marginBottom: 2 }}>Deep Analytics now available</div>
                   <div style={{ fontSize: 12, color: V.textMuted }}>See caption adoption, seek heatmaps, buffer events, and individual session replays.</div>
                 </div>
-                <div onClick={() => handleNavChange("deep")} style={{ background: V.teal, color: V.white, borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                <div onClick={() => handleNavChange("deep")} style={{ background: V.teal, color: "#0e1216", borderRadius: 6, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
                   View Deep Analytics →
                 </div>
               </div>
@@ -74,11 +74,11 @@ export default function App() {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
                     <h1 style={{ fontSize: 28, fontWeight: 700, color: V.text, margin: 0 }}>Deep Analytics</h1>
-                    <span style={{ background: V.teal, color: V.white, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4, letterSpacing: 0.5 }}>ENTERPRISE</span>
+                    <span style={{ background: V.teal, color: "#0e1216", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4, letterSpacing: 0.5 }}>ENTERPRISE</span>
                   </div>
                   <div style={{ fontSize: 13, color: V.textMuted }}>Player event telemetry from embedded players and vimeo.com views</div>
                 </div>
-                <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 6, padding: "6px 12px", fontSize: 13, color: V.textMid, cursor: "pointer" }}>
+                <div style={{ background: V.tableHeaderBg, border: `1px solid ${V.border}`, borderRadius: 6, padding: "6px 12px", fontSize: 13, color: V.textMid, cursor: "pointer" }}>
                   All time ▾
                 </div>
               </div>

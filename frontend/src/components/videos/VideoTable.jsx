@@ -37,10 +37,10 @@ export default function VideoTable() {
   }
 
   return (
-    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, overflow: "hidden" }}>
+    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, overflow: "hidden" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
-          <tr style={{ background: V.bg }}>
+          <tr style={{ background: V.tableHeaderBg }}>
             <th style={{ padding: "10px 16px", textAlign: "left", fontWeight: 500, color: V.textMuted, fontSize: 11, borderBottom: `1px solid ${V.border}` }}>Video</th>
             {[
               ["views", "Views"],
@@ -78,12 +78,12 @@ export default function VideoTable() {
             <tr
               key={v.videoId || v.title}
               style={{ borderBottom: `1px solid ${V.borderLight}`, cursor: "pointer" }}
-              onMouseEnter={e => e.currentTarget.style.background = V.bg}
+              onMouseEnter={e => e.currentTarget.style.background = V.active}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
               <td style={{ padding: "12px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 40, height: 28, background: V.borderLight, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🎬</div>
+                  <div style={{ width: 40, height: 28, background: V.tableHeaderBg, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🎬</div>
                   <div>
                     <div style={{ fontWeight: 500, color: V.text }}>{v.title}</div>
                     <div style={{ fontSize: 11, color: V.textLight }}>{v.duration}</div>

@@ -30,7 +30,7 @@ export default function EventBreakdown() {
   if (breakdown.length === 0) {
     // Show placeholder
     return (
-      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
         <SectionHeader title="Event breakdown" />
         <div style={{ fontSize: 12, color: V.textLight, padding: "20px 0" }}>Waiting for events...</div>
       </div>
@@ -40,7 +40,7 @@ export default function EventBreakdown() {
   const maxCount = Math.max(...breakdown.map(e => e.count));
 
   return (
-    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
       <SectionHeader title="Event breakdown" />
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {breakdown.map(({ event, count, color }) => (
@@ -52,7 +52,7 @@ export default function EventBreakdown() {
               </div>
               <span style={{ fontSize: 12, color: V.textMuted }}>{count.toLocaleString()}</span>
             </div>
-            <div style={{ background: V.bg, borderRadius: 99, height: 4 }}>
+            <div style={{ background: "rgba(114,130,163,0.12)", borderRadius: 99, height: 4 }}>
               <div style={{ width: `${(count / maxCount) * 100}%`, height: "100%", background: color, borderRadius: 99 }} />
             </div>
           </div>

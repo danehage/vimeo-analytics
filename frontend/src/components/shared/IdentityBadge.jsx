@@ -9,7 +9,7 @@ export default function IdentityBadge({ viewer }) {
     );
   }
   return (
-    <span style={{ background: V.bg, color: V.textMuted, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, border: `1px solid ${V.border}` }}>
+    <span style={{ background: V.tableHeaderBg, color: V.textMuted, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4, border: `1px solid ${V.border}` }}>
       Anonymous
     </span>
   );

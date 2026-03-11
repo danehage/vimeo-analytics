@@ -17,7 +17,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ activeNav, onNavChange }) {
   return (
-    <div style={{ width: 160, background: V.sidebar, borderRight: `1px solid ${V.border}`, padding: "16px 0", flexShrink: 0, overflowY: "auto" }}>
+    <div style={{ width: 180, background: V.sidebar, borderRight: `1px solid ${V.border}`, padding: "16px 0", flexShrink: 0, overflowY: "auto" }}>
       <div style={{ padding: "0 12px 16px", borderBottom: `1px solid ${V.borderLight}`, marginBottom: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, color: V.textMuted, fontSize: 12, cursor: "pointer" }}>
           ← Back to home
@@ -29,12 +29,12 @@ export default function Sidebar({ activeNav, onNavChange }) {
             padding: "8px 12px", margin: "1px 8px", borderRadius: 6, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             background: activeNav === item.id ? V.active : "transparent",
-            color: activeNav === item.id ? V.text : item.id === "deep" ? V.teal : V.textMid,
-            fontWeight: activeNav === item.id ? 600 : item.id === "deep" ? 600 : 400,
-            fontSize: 13,
+            color: activeNav === item.id ? V.teal : item.id === "deep" ? V.teal : V.text,
+            fontWeight: activeNav === item.id ? 600 : item.id === "deep" ? 600 : 350,
+            fontSize: 14,
           }}>
           <span>{item.label}</span>
-          {item.isNew && <span style={{ background: V.teal, color: V.white, fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}>NEW</span>}
+          {item.isNew && <span style={{ background: V.teal, color: "#0e1216", fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3 }}>NEW</span>}
         </div>
       ))}
     </div>

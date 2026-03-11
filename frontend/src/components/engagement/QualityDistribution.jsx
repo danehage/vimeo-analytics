@@ -13,7 +13,7 @@ const QUALITY_DATA = [
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+    <div style={{ background: V.tableHeaderBg, border: `1px solid ${V.border}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
       <div style={{ color: V.textMuted, marginBottom: 4, fontSize: 11 }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ color: V.teal, fontWeight: 600 }}>{p.name}: {p.value}</div>
@@ -24,7 +24,7 @@ function CustomTooltip({ active, payload, label }) {
 
 export default function QualityDistribution() {
   return (
-    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
       <SectionHeader title="Quality distribution" sub="Playback quality across all sessions" />
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={QUALITY_DATA} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>

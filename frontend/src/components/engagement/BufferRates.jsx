@@ -11,7 +11,7 @@ export default function BufferRates() {
   const maxRate = Math.max(...BUFFER_DATA.map(v => v.bufferRate), 1);
 
   return (
-    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, padding: "20px 24px" }}>
+    <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
       <SectionHeader title="Buffer rate by video" sub="% of sessions with buffer events" />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {BUFFER_DATA.map(v => (
@@ -40,7 +40,7 @@ export default function BufferRates() {
                 {v.bufferRate > 0 ? `${v.bufferRate}%` : "\u2014"}
               </span>
             </div>
-            <div style={{ background: V.bg, borderRadius: 99, height: 6 }}>
+            <div style={{ background: "rgba(114,130,163,0.12)", borderRadius: 99, height: 6 }}>
               <div style={{
                 width: `${(v.bufferRate / maxRate) * 100}%`,
                 height: "100%",

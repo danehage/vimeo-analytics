@@ -54,8 +54,8 @@ export default function SessionList({ onSelect }) {
                 borderRadius: 5,
                 fontSize: 12,
                 cursor: "pointer",
-                background: filterVideo === val ? V.teal : V.white,
-                color: filterVideo === val ? V.white : V.textMid,
+                background: filterVideo === val ? V.teal : V.tableHeaderBg,
+                color: filterVideo === val ? "#0e1216" : V.textMid,
                 border: `1px solid ${filterVideo === val ? V.teal : V.border}`,
                 fontWeight: filterVideo === val ? 600 : 400,
               }}
@@ -66,10 +66,10 @@ export default function SessionList({ onSelect }) {
         </div>
       </div>
 
-      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: V.bg }}>
+            <tr style={{ background: V.tableHeaderBg }}>
               {["Session", "Video", "Date", "Source", "Watched", "Captions", "Seeks", "Buffers", ""].map(h => (
                 <th key={h} style={{
                   padding: "10px 14px",
@@ -93,7 +93,7 @@ export default function SessionList({ onSelect }) {
                 key={s.session_id}
                 onClick={() => onSelect(s)}
                 style={{ borderBottom: `1px solid ${V.borderLight}`, cursor: "pointer", transition: "background 0.1s" }}
-                onMouseEnter={e => e.currentTarget.style.background = V.bg}
+                onMouseEnter={e => e.currentTarget.style.background = V.active}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
                 <td style={{ padding: "12px 14px" }}>
@@ -135,7 +135,7 @@ export default function SessionList({ onSelect }) {
                 </td>
                 <td style={{ padding: "12px 14px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 50, height: 5, background: V.borderLight, borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ width: 50, height: 5, background: "rgba(114,130,163,0.15)", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{
                         width: `${s.watchedPct}%`,
                         height: "100%",

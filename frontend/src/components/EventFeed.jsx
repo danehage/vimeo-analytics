@@ -55,13 +55,13 @@ export default function EventFeed() {
         onClick={() => setVisible(!visible)}
         style={{
           background: V.teal,
-          color: V.white,
+          color: "#0e1216",
           borderRadius: 99,
           padding: "8px 16px",
           fontSize: 12,
           fontWeight: 600,
           cursor: "pointer",
-          boxShadow: "0 2px 12px rgba(26,183,234,0.3)",
+          boxShadow: "0 2px 12px rgba(3,193,235,0.3)",
           display: "flex",
           alignItems: "center",
           gap: 6,
@@ -82,10 +82,10 @@ export default function EventFeed() {
           width: 420,
           maxHeight: 480,
           overflowY: "auto",
-          background: V.white,
+          background: V.tableHeaderBg,
           border: `1px solid ${V.border}`,
-          borderRadius: 8,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          borderRadius: V.cardRadius,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}>
           <div style={{ padding: "12px 16px", borderBottom: `1px solid ${V.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

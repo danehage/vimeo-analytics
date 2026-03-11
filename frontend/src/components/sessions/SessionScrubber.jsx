@@ -22,7 +22,7 @@ export default function SessionScrubber({ session }) {
           {buckets.map((type, i) => (
             <div key={i} style={{
               flex: 1,
-              background: type === "watched" ? V.teal : type === "seeked" ? V.purple : V.borderLight,
+              background: type === "watched" ? V.teal : type === "seeked" ? V.purple : "rgba(114,130,163,0.1)",
               borderRight: i % 10 === 9 ? `1px solid ${V.bg}` : "none",
             }} />
           ))}
@@ -53,7 +53,7 @@ export default function SessionScrubber({ session }) {
       </div>
       {/* Legend */}
       <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
-        {[[V.teal, "Watched"], [V.purple, "Seek point"], [V.borderLight, "Not watched"]].map(([c, l]) => (
+        {[[V.teal, "Watched"], [V.purple, "Seek point"], ["rgba(114,130,163,0.1)", "Not watched"]].map(([c, l]) => (
           <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: V.textMuted }}>
             <div style={{ width: 12, height: 6, background: c, borderRadius: 2, border: `1px solid ${V.border}` }} />
             {l}
