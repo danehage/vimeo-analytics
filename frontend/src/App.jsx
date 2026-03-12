@@ -17,6 +17,7 @@ import SeekHeatmap from './components/engagement/SeekHeatmap';
 import CaptionAdoption from './components/engagement/CaptionAdoption';
 import QualityDistribution from './components/engagement/QualityDistribution';
 import BufferRates from './components/engagement/BufferRates';
+import CaptionLanguages from './components/engagement/CaptionLanguages';
 
 export default function App() {
   const [activeNav, setActiveNav] = useState("deep");
@@ -106,6 +107,7 @@ export default function App() {
                   <SeekHeatmap />
                   <CaptionAdoption />
                   <QualityDistribution />
+                  <CaptionLanguages />
                   <BufferRates />
                 </div>
               )}

@@ -3,7 +3,7 @@ import SectionHeader from '../shared/SectionHeader';
 
 const BUFFER_DATA = [
   { title: "Security Training Module 3", bufferRate: 1.8, source: "embed", embedUrl: "intranet.corp.com" },
-  { title: "AWS Marketplace Global Expansion", bufferRate: 1.2, source: "embed", embedUrl: "sharepoint.corp.com" },
+  { title: "Global Partner Summit Keynote", bufferRate: 1.2, source: "embed", embedUrl: "sharepoint.corp.com" },
   { title: "Florence", bufferRate: 0, source: "vimeo.com", embedUrl: null },
 ];
 

@@ -4,7 +4,7 @@
 
 -- Videos
 INSERT INTO videos (video_id, title, duration, created_at) VALUES
-  ('v_aws_mktplace',  'AWS Marketplace Global Expansion',  83,   '2026-01-10T09:00:00Z'),
+  ('v_aws_mktplace',  'Global Partner Summit Keynote',  83,   '2026-01-10T09:00:00Z'),
   ('v_sec_train_3',   'Security Training Module 3',        1102, '2026-01-15T14:00:00Z'),
   ('v_florence',      'Florence',                          15,   '2026-01-20T11:00:00Z'),
   ('v_onboard_cult',  'Onboarding: Company Culture',       720,  '2026-01-05T08:00:00Z'),

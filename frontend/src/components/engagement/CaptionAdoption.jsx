@@ -3,7 +3,7 @@ import SectionHeader from '../shared/SectionHeader';
 
 const CAPTION_DATA = [
   { title: "Security Training Module 3", captionPct: 67 },
-  { title: "AWS Marketplace Global Expansion", captionPct: 36 },
+  { title: "Global Partner Summit Keynote", captionPct: 36 },
 ];
 
 export default function CaptionAdoption() {

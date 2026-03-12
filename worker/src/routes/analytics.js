@@ -25,6 +25,8 @@ export async function handleAnalytics(path, params, sql) {
     return handleViewers(params, sql);
   } else if (viewerDetailMatch) {
     return handleViewerDetail(viewerDetailMatch[1], sql);
+  } else if (path === '/api/analytics/caption-languages') {
+    return handleCaptionLanguages(sql);
   } else if (path === '/api/analytics/recent-events') {
     return handleRecentEvents(sql);
   }
@@ -526,6 +528,29 @@ async function handleViewerDetail(fingerprintId, sql) {
     videos,
     events,
   });
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/analytics/caption-languages
+// ---------------------------------------------------------------------------
+
+async function handleCaptionLanguages(sql) {
+  const rows = await sql`
+    SELECT
+      COALESCE(payload->>'language', 'unknown') AS language,
+      COALESCE(payload->>'label', payload->>'language', 'Unknown') AS label,
+      COUNT(*)::int AS events,
+      COUNT(DISTINCT session_id)::int AS sessions
+    FROM events
+    WHERE event_type = 'texttrackchange'
+      AND payload->>'kind' IS NOT NULL
+      AND payload->>'language' IS NOT NULL
+      AND payload->>'language' != ''
+    GROUP BY payload->>'language', payload->>'label'
+    ORDER BY sessions DESC
+  `;
+
+  return json(rows);
 }
 
 // ---------------------------------------------------------------------------
