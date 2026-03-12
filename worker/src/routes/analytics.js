@@ -16,7 +16,7 @@ export async function handleAnalytics(path, params, sql) {
   } else if (hotspotsMatch) {
     return handleHotspots(hotspotsMatch[1], sql);
   } else if (path === '/api/analytics/quality') {
-    return handleQuality(sql);
+    return handleQuality(params, sql);
   } else if (path === '/api/analytics/sessions') {
     return handleSessions(params, sql);
   } else if (sessionDetailMatch) {
@@ -278,17 +278,34 @@ async function handleHotspots(videoId, sql) {
 // GET /api/analytics/quality
 // ---------------------------------------------------------------------------
 
-async function handleQuality(sql) {
-  const rows = await sql`
-    SELECT
-      payload->>'quality' AS quality,
-      COUNT(*)::int AS count
-    FROM events
-    WHERE event_type = 'qualitychange'
-      AND payload->>'quality' IS NOT NULL
-    GROUP BY payload->>'quality'
-    ORDER BY count DESC
-  `;
+async function handleQuality(params, sql) {
+  const videoId = params.get('videoId');
+
+  let rows;
+  if (videoId) {
+    rows = await sql`
+      SELECT
+        payload->>'quality' AS quality,
+        COUNT(*)::int AS count
+      FROM events
+      WHERE event_type = 'qualitychange'
+        AND payload->>'quality' IS NOT NULL
+        AND video_id = ${videoId}
+      GROUP BY payload->>'quality'
+      ORDER BY count DESC
+    `;
+  } else {
+    rows = await sql`
+      SELECT
+        payload->>'quality' AS quality,
+        COUNT(*)::int AS count
+      FROM events
+      WHERE event_type = 'qualitychange'
+        AND payload->>'quality' IS NOT NULL
+      GROUP BY payload->>'quality'
+      ORDER BY count DESC
+    `;
+  }
 
   return json(rows);
 }

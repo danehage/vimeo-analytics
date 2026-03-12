@@ -1,18 +1,27 @@
+import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { V } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
+import { usePolling } from '../../hooks/usePolling';
 
-const SEEK_HEATMAP = [
-  { segment: "0\u20131 min", replays: 23 },
-  { segment: "1\u20132 min", replays: 41 },
-  { segment: "2\u20133 min", replays: 89 },
-  { segment: "3\u20134 min", replays: 134 },
-  { segment: "4\u20135 min", replays: 178 },
-  { segment: "5\u20136 min", replays: 112 },
-  { segment: "6\u20137 min", replays: 67 },
-  { segment: "7\u20138 min", replays: 34 },
-  { segment: "8+ min", replays: 19 },
-];
+// Seed data per video for demo visual weight
+const SEED_HOTSPOTS = {
+  "sec_training_3": [23,41,89,134,178,112,67,34,19,8,45,67,23,12,5,3,1,0,0,0],
+  "onboarding_2024": [56,78,45,23,12,8,34,89,120,95,67,34,12,5,2,1,0,0,0,0],
+  "product_demo_q1": [12,23,34,45,56,78,90,78,56,45,34,23,12,8,5,3,2,1,0,0],
+};
+
+function buildSegmentLabel(bucket, duration) {
+  if (!duration) {
+    const min = Math.floor(bucket * 0.5);
+    return bucket < 19 ? `${min}–${min + 1}m` : `${min}m+`;
+  }
+  const segSecs = duration / 20;
+  const startSecs = bucket * segSecs;
+  const m = Math.floor(startSecs / 60);
+  const s = Math.floor(startSecs % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -27,22 +36,81 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function SeekHeatmap() {
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const { data: videosData } = usePolling('/api/analytics/videos', 30000);
+  const { data: hotspotsData } = usePolling(
+    selectedVideo ? `/api/analytics/hotspots/${selectedVideo}` : null,
+    30000
+  );
+
+  const videos = videosData || [];
+
+  // Build chart data
+  let chartData;
+  const selectedVid = videos.find(v => v.video_id === selectedVideo);
+  const duration = selectedVid?.duration || 0;
+
+  if (selectedVideo && hotspotsData?.hotspots) {
+    chartData = hotspotsData.hotspots.map(h => ({
+      segment: buildSegmentLabel(h.bucket, duration),
+      replays: h.seeks,
+    }));
+  } else if (selectedVideo && SEED_HOTSPOTS[selectedVideo]) {
+    chartData = SEED_HOTSPOTS[selectedVideo].map((val, i) => ({
+      segment: buildSegmentLabel(i, duration),
+      replays: val,
+    }));
+  } else if (!selectedVideo && videos.length > 0) {
+    // No video selected yet — prompt to pick one
+    chartData = null;
+  } else {
+    chartData = null;
+  }
+
+  const sub = selectedVid
+    ? (selectedVid.title || selectedVid.video_id)
+    : "Select a video to view seek heatmap";
+
   return (
     <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
-      <SectionHeader title="Most replayed sections" sub="Security Training Module 3" />
-      <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={SEEK_HEATMAP} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={V.borderLight} vertical={false} />
-          <XAxis dataKey="segment" tick={{ fill: V.textLight, fontSize: 9 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: V.textLight, fontSize: 10 }} axisLine={false} tickLine={false} />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="replays" name="Seek events" radius={[3, 3, 0, 0]}>
-            {SEEK_HEATMAP.map((entry, i) => (
-              <Cell key={i} fill={entry.replays > 100 ? V.teal : entry.replays > 50 ? V.tealMid : "rgba(114,130,163,0.2)"} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <SectionHeader title="Most replayed sections" sub={sub} />
+        <select
+          value={selectedVideo || ""}
+          onChange={e => setSelectedVideo(e.target.value || null)}
+          style={{
+            fontSize: 12, padding: "5px 10px", borderRadius: 5,
+            border: `1px solid ${V.border}`, background: V.tableHeaderBg,
+            color: V.textMid, cursor: "pointer", maxWidth: 200,
+          }}
+        >
+          <option value="">Select video...</option>
+          {videos.map(v => (
+            <option key={v.video_id} value={v.video_id}>
+              {(v.title || v.video_id).slice(0, 35)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {chartData && chartData.length > 0 ? (
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={V.borderLight} vertical={false} />
+            <XAxis dataKey="segment" tick={{ fill: V.textLight, fontSize: 9 }} axisLine={false} tickLine={false} interval={1} />
+            <YAxis tick={{ fill: V.textLight, fontSize: 10 }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="replays" name="Seek events" radius={[3, 3, 0, 0]}>
+              {chartData.map((entry, i) => (
+                <Cell key={i} fill={entry.replays > 100 ? V.teal : entry.replays > 50 ? V.tealMid : "rgba(114,130,163,0.2)"} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: V.textLight, fontSize: 13 }}>
+          {selectedVideo ? "No seek data for this video yet" : "Select a video to view seek heatmap"}
+        </div>
+      )}
     </div>
   );
 }
