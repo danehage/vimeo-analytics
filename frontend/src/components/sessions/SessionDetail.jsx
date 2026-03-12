@@ -47,6 +47,8 @@ export default function SessionDetail({ session, onBack }) {
   const completed = sessionData.completed ?? session.completed;
   const video = sessionData.video_title || session.video || session.videoId;
   const embedUrl = sessionData.embed_url || session.embedUrl || '';
+  const viewerId = sessionData.viewer_id || session.viewerId || null;
+  const fingerprintId = sessionData.fingerprint_id || session.fingerprintId || null;
   const date = session.date || (sessionData.started_at ? new Date(sessionData.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '');
   const time = session.time || (sessionData.started_at ? new Date(sessionData.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '');
 
@@ -98,6 +100,18 @@ export default function SessionDetail({ session, onBack }) {
               )}
             </div>
             <div style={{ fontSize: 14, fontWeight: 600, color: V.textMid, marginBottom: 2 }}>{video}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+              {viewerId ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: V.greenLight, border: `1px solid ${V.green}33`, borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 500, color: V.green }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: V.green }} />
+                  {viewerId}
+                </span>
+              ) : fingerprintId ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: V.tableHeaderBg || V.bg, border: `1px solid ${V.border}`, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontFamily: "monospace", color: V.textMuted }}>
+                  {fingerprintId}
+                </span>
+              ) : null}
+            </div>
             <div style={{ fontSize: 12, color: V.textLight }}>{date} at {time} · {embedUrl}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>

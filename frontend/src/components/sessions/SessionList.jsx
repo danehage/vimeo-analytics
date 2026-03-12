@@ -12,6 +12,8 @@ export default function SessionList({ onSelect }) {
     shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
     video: s.video_title || s.video_id,
     videoId: s.video_id,
+    viewerId: s.viewer_id || null,
+    fingerprintId: s.fingerprint_id || null,
     duration: s.video_duration || 0,
     date: s.started_at ? new Date(s.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
     time: s.started_at ? new Date(s.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
@@ -70,7 +72,7 @@ export default function SessionList({ onSelect }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: V.tableHeaderBg }}>
-              {["Session", "Video", "Date", "Source", "Watched", "Captions", "Seeks", "Buffers", ""].map(h => (
+              {["Session", "Viewer", "Video", "Date", "Source", "Watched", "Captions", "Seeks", "Buffers", ""].map(h => (
                 <th key={h} style={{
                   padding: "10px 14px",
                   textAlign: h === "" ? "center" : "left",
@@ -98,6 +100,16 @@ export default function SessionList({ onSelect }) {
               >
                 <td style={{ padding: "12px 14px" }}>
                   <span style={{ fontFamily: "monospace", fontSize: 12, color: V.teal, fontWeight: 600 }}>{s.shortId}</span>
+                </td>
+                <td style={{ padding: "12px 14px", maxWidth: 160 }}>
+                  {s.viewerId ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: V.green, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: V.text, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>{s.viewerId}</span>
+                    </div>
+                  ) : (
+                    <span style={{ fontFamily: "monospace", fontSize: 11, color: V.textLight }}>{s.fingerprintId || '—'}</span>
+                  )}
                 </td>
                 <td style={{ padding: "12px 14px", maxWidth: 180 }}>
                   <div style={{ fontWeight: 500, color: V.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>{s.video}</div>
