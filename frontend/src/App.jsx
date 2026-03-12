@@ -97,7 +97,7 @@ export default function App() {
 
               {activeTab === "viewers" && (
                 selectedViewer
-                  ? <ViewerDetail viewer={selectedViewer} onBack={() => setSelectedViewer(null)} />
+                  ? <ViewerDetail viewer={selectedViewer} onBack={() => setSelectedViewer(null)} onSelectSession={(s) => { setSelectedViewer(null); setActiveTab("sessions"); setSelectedSession(s); }} />
                   : <ViewerList onSelect={setSelectedViewer} />
               )}
 

@@ -4,17 +4,26 @@ import FingerprintBadge from '../shared/FingerprintBadge';
 import IdentityBadge from '../shared/IdentityBadge';
 import { usePolling } from '../../hooks/usePolling';
 
-export default function ViewerDetail({ viewer, onBack }) {
+export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
   const identified = viewer.status === "identified";
   const { data, loading } = usePolling(`/api/analytics/viewers/${viewer.fingerprintId}`, 30000);
 
   // Use API data if available, fall back to viewer prop
   const sessions = (data?.sessions || []).map(s => ({
     id: '#' + (s.session_id?.slice(0, 6) || '—'),
+    session_id: s.session_id,
+    shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
     video: s.video_title || s.video_id,
+    videoId: s.video_id,
+    viewerId: s.viewer_id || viewer.identifiedAs || null,
+    fingerprintId: s.fingerprint_id || viewer.fingerprintId,
+    duration: s.video_duration || 0,
     date: s.started_at ? new Date(s.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+    time: s.started_at ? new Date(s.started_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
+    embedUrl: s.embed_url || '',
     watchedPct: Math.round(s.percent_watched || 0),
     completed: !!s.completed,
+    isLive: s.embed_url?.includes('vidharbor.com'),
   }));
 
   const videos = (data?.videos || []).map(v => ({
@@ -137,7 +146,13 @@ export default function ViewerDetail({ viewer, onBack }) {
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {sessions.map((s, i) => (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < sessions.length - 1 ? `1px solid ${V.borderLight}` : "none" }}>
+              <div
+                key={s.id}
+                onClick={() => onSelectSession?.(s)}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < sessions.length - 1 ? `1px solid ${V.borderLight}` : "none", cursor: onSelectSession ? "pointer" : "default", borderRadius: 4, transition: "background 0.1s" }}
+                onMouseEnter={e => { if (onSelectSession) e.currentTarget.style.background = V.active; }}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.completed ? V.green : s.watchedPct >= 50 ? V.teal : V.amber, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 500, color: V.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.video}</div>
@@ -146,6 +161,7 @@ export default function ViewerDetail({ viewer, onBack }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: s.completed ? V.green : s.watchedPct >= 50 ? V.textMid : V.amber }}>{s.completed ? "✓ 100%" : `${s.watchedPct}%`}</span>
                   <span style={{ fontFamily: "monospace", fontSize: 11, color: V.teal }}>{s.id}</span>
+                  {onSelectSession && <span style={{ color: V.teal, fontSize: 14 }}>›</span>}
                 </div>
               </div>
             ))}
