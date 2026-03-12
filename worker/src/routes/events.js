@@ -38,12 +38,28 @@ export async function handleEvents(request, sql) {
     `;
   }
 
-  // Upsert video
+  // Upsert video — fetch title from Vimeo oEmbed if missing
   if (video_id && video_duration) {
+    const existing = await sql`SELECT title FROM videos WHERE video_id = ${video_id}`;
+    let title = existing[0]?.title || null;
+
+    if (!title) {
+      try {
+        const res = await fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${video_id}`);
+        if (res.ok) {
+          const meta = await res.json();
+          title = meta.title || null;
+        }
+      } catch {
+        // Silent fail — title is optional
+      }
+    }
+
     await sql`
-      INSERT INTO videos (video_id, duration, created_at)
-      VALUES (${video_id}, ${video_duration}, NOW())
+      INSERT INTO videos (video_id, title, duration, created_at)
+      VALUES (${video_id}, ${title}, ${video_duration}, NOW())
       ON CONFLICT (video_id) DO UPDATE SET
+        title = COALESCE(NULLIF(${title}, ''), videos.title),
         duration = COALESCE(${video_duration}, videos.duration)
     `;
   }
