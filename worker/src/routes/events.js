@@ -2,7 +2,7 @@ export async function handleEvents(request, sql) {
   const body = await request.json();
   const {
     event_id, session_id, video_id, viewer_id, fingerprint_id,
-    embed_url, event_type, playhead, timestamp, video_duration, payload
+    embed_url, event_type, playhead, timestamp, video_duration, is_live, payload
   } = body;
 
   // Insert event (omit event_id to let Postgres generate it via gen_random_uuid())
@@ -39,7 +39,7 @@ export async function handleEvents(request, sql) {
   }
 
   // Upsert video — fetch title from Vimeo oEmbed if missing
-  if (video_id && video_duration) {
+  if (video_id && (video_duration || is_live)) {
     const existing = await sql`SELECT title FROM videos WHERE video_id = ${video_id}`;
     let title = existing[0]?.title || null;
 
@@ -56,11 +56,12 @@ export async function handleEvents(request, sql) {
     }
 
     await sql`
-      INSERT INTO videos (video_id, title, duration, created_at)
-      VALUES (${video_id}, ${title}, ${video_duration}, NOW())
+      INSERT INTO videos (video_id, title, duration, created_at, is_live)
+      VALUES (${video_id}, ${title}, ${video_duration}, NOW(), ${!!is_live})
       ON CONFLICT (video_id) DO UPDATE SET
         title = COALESCE(NULLIF(${title}, ''), videos.title),
-        duration = COALESCE(${video_duration}, videos.duration)
+        duration = COALESCE(NULLIF(${video_duration}, 0), videos.duration),
+        is_live = videos.is_live OR ${!!is_live}
     `;
   }
 

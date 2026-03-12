@@ -4,6 +4,7 @@ export async function handleAnalytics(path, params, sql) {
   const hotspotsMatch = path.match(/^\/api\/analytics\/hotspots\/(.+)$/);
   const sessionDetailMatch = path.match(/^\/api\/analytics\/sessions\/(.+)$/);
   const viewerDetailMatch = path.match(/^\/api\/analytics\/viewers\/(.+)$/);
+  const liveEventDetailMatch = path.match(/^\/api\/analytics\/live-events\/(.+)$/);
 
   if (path === '/api/analytics/summary') {
     return handleSummary(params, sql);
@@ -25,6 +26,10 @@ export async function handleAnalytics(path, params, sql) {
     return handleViewers(params, sql);
   } else if (viewerDetailMatch) {
     return handleViewerDetail(viewerDetailMatch[1], sql);
+  } else if (path === '/api/analytics/live-events') {
+    return handleLiveEvents(sql);
+  } else if (liveEventDetailMatch) {
+    return handleLiveEventDetail(liveEventDetailMatch[1], sql);
   } else if (path === '/api/analytics/caption-languages') {
     return handleCaptionLanguages(sql);
   } else if (path === '/api/analytics/recent-events') {
@@ -77,21 +82,30 @@ async function handleSummary(params, sql) {
 
     const deep = await sql`
       SELECT
-        COALESCE(ROUND(
-          COUNT(*) FILTER (WHERE event_type = 'texttrackchange')::numeric * 100.0 /
+        COALESCE(LEAST(ROUND(
+          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::numeric * 100.0 /
           NULLIF(COUNT(DISTINCT session_id), 0), 1
-        ), 0) AS caption_adoption,
+        ), 100), 0) AS caption_adoption,
         COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events,
-        COALESCE(ROUND(
-          COUNT(*) FILTER (WHERE event_type = 'bufferstart')::numeric * 100.0 /
-          NULLIF(COUNT(DISTINCT session_id), 0), 1
-        ), 0) AS buffer_rate,
         COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes
       FROM events
       WHERE timestamp >= ${from} AND timestamp <= ${to}
     `;
 
-    return json({ ...rows[0], ...deep[0] });
+    const bufferResult = await sql`
+      SELECT COALESCE(ROUND(
+        COUNT(*)::numeric * 100.0 / NULLIF((SELECT COUNT(*) FROM sessions WHERE started_at >= ${from} AND started_at <= ${to}), 0), 1
+      ), 0) AS buffer_rate
+      FROM (
+        SELECT session_id
+        FROM events
+        WHERE event_type = 'bufferend' AND timestamp >= ${from} AND timestamp <= ${to}
+        GROUP BY session_id
+        HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
+      ) high_buffer
+    `;
+
+    return json({ ...rows[0], ...deep[0], buffer_rate: bufferResult[0]?.buffer_rate ?? 0 });
   }
 
   // No date filter
@@ -113,15 +127,24 @@ async function handleSummary(params, sql) {
         NULLIF(COUNT(DISTINCT session_id), 0), 1
       ), 0) AS caption_adoption,
       COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events,
-      COALESCE(ROUND(
-        COUNT(*) FILTER (WHERE event_type = 'bufferstart')::numeric * 100.0 /
-        NULLIF(COUNT(DISTINCT session_id), 0), 1
-      ), 0) AS buffer_rate,
       COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes
     FROM events
   `;
 
-  return json({ ...rows[0], ...deep[0] });
+  const bufferResult = await sql`
+    SELECT COALESCE(ROUND(
+      COUNT(*)::numeric * 100.0 / NULLIF((SELECT COUNT(*) FROM sessions), 0), 1
+    ), 0) AS buffer_rate
+    FROM (
+      SELECT session_id
+      FROM events
+      WHERE event_type = 'bufferend'
+      GROUP BY session_id
+      HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
+    ) high_buffer
+  `;
+
+  return json({ ...rows[0], ...deep[0], buffer_rate: bufferResult[0]?.buffer_rate ?? 0 });
 }
 
 // ---------------------------------------------------------------------------
@@ -174,13 +197,19 @@ async function handleVideos(params, sql) {
       COUNT(DISTINCT COALESCE(s.viewer_id, s.fingerprint_id))::int AS unique_viewers,
       COALESCE(ROUND(AVG(s.percent_watched)::numeric, 1), 0) AS avg_percent_watched,
       COUNT(*) FILTER (WHERE s.completed)::int AS finishes,
-      COALESCE(ROUND(
+      COALESCE(LEAST(ROUND(
         (SELECT COUNT(DISTINCT e.session_id) FROM events e WHERE e.video_id = s.video_id AND e.event_type = 'texttrackchange')::numeric * 100.0 /
         NULLIF(COUNT(*), 0), 1
-      ), 0) AS caption_adoption,
+      ), 100), 0) AS caption_adoption,
       (SELECT COUNT(*) FROM events e WHERE e.video_id = s.video_id AND e.event_type = 'seeked')::int AS seek_events,
       COALESCE(ROUND(
-        (SELECT COUNT(DISTINCT e.session_id) FROM events e WHERE e.video_id = s.video_id AND e.event_type = 'bufferstart')::numeric * 100.0 /
+        (SELECT COUNT(*) FROM (
+          SELECT e2.session_id
+          FROM events e2
+          WHERE e2.video_id = s.video_id AND e2.event_type = 'bufferend'
+          GROUP BY e2.session_id
+          HAVING SUM(COALESCE((e2.payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(e2.video_duration), 0) > 0.03
+        ) hb)::numeric * 100.0 /
         NULLIF(COUNT(*), 0), 1
       ), 0) AS buffer_rate
     FROM sessions s
@@ -527,6 +556,128 @@ async function handleViewerDetail(fingerprintId, sql) {
     sessions,
     videos,
     events,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/analytics/live-events
+// ---------------------------------------------------------------------------
+
+async function handleLiveEvents(sql) {
+  const rows = await sql`
+    SELECT
+      v.video_id, v.title, v.duration, v.created_at,
+      COUNT(DISTINCT s.session_id)::int AS total_sessions,
+      COUNT(DISTINCT COALESCE(s.viewer_id, s.fingerprint_id))::int AS unique_viewers,
+      COALESCE(ROUND(AVG(s.percent_watched)::numeric, 1), 0) AS avg_percent_watched,
+      MAX(s.ended_at) AS last_activity,
+      EXISTS(
+        SELECT 1 FROM events e
+        JOIN sessions s2 ON s2.session_id = e.session_id
+        WHERE e.video_id = v.video_id
+          AND e.timestamp >= NOW() - INTERVAL '10 minutes'
+          AND s2.completed = false
+      ) AS is_active,
+      (SELECT COUNT(DISTINCT e.session_id) FROM events e
+       JOIN sessions s2 ON s2.session_id = e.session_id
+       WHERE e.video_id = v.video_id
+         AND e.timestamp >= NOW() - INTERVAL '5 minutes'
+         AND s2.completed = false)::int AS current_viewers
+    FROM videos v
+    LEFT JOIN sessions s ON s.video_id = v.video_id
+    WHERE v.is_live = true
+    GROUP BY v.video_id, v.title, v.duration, v.created_at
+    ORDER BY
+      is_active DESC,
+      last_activity DESC NULLS LAST
+  `;
+
+  return json(rows);
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/analytics/live-events/:id
+// ---------------------------------------------------------------------------
+
+async function handleLiveEventDetail(videoId, sql) {
+  // A. Video metadata + aggregate stats
+  const videoRows = await sql`
+    SELECT
+      v.video_id, v.title, v.duration, v.created_at, v.is_live,
+      COUNT(DISTINCT s.session_id)::int AS total_sessions,
+      COUNT(DISTINCT COALESCE(s.viewer_id, s.fingerprint_id))::int AS unique_viewers,
+      COALESCE(ROUND(AVG(s.percent_watched)::numeric, 1), 0) AS avg_percent_watched,
+      COUNT(*) FILTER (WHERE s.completed)::int AS finishes,
+      MAX(s.ended_at) AS last_activity,
+      EXISTS(
+        SELECT 1 FROM events e
+        JOIN sessions s2 ON s2.session_id = e.session_id
+        WHERE e.video_id = v.video_id
+          AND e.timestamp >= NOW() - INTERVAL '10 minutes'
+          AND s2.completed = false
+      ) AS is_active,
+      (SELECT COUNT(DISTINCT e.session_id) FROM events e
+       JOIN sessions s2 ON s2.session_id = e.session_id
+       WHERE e.video_id = v.video_id
+         AND e.timestamp >= NOW() - INTERVAL '5 minutes'
+         AND s2.completed = false)::int AS current_viewers
+    FROM videos v
+    LEFT JOIN sessions s ON s.video_id = v.video_id
+    WHERE v.video_id = ${videoId}
+    GROUP BY v.video_id, v.title, v.duration, v.created_at, v.is_live
+  `;
+
+  if (videoRows.length === 0) {
+    return json({ error: 'Live event not found' }, 404);
+  }
+
+  // B. Active viewers with real-time session metrics
+  const activeViewers = await sql`
+    SELECT DISTINCT ON (COALESCE(s.viewer_id, s.fingerprint_id))
+      s.session_id, s.viewer_id, s.fingerprint_id, s.percent_watched, s.embed_url, s.started_at,
+      latest.playhead AS last_playhead,
+      latest.timestamp AS last_event_at,
+      (SELECT payload->>'quality' FROM events eq
+       WHERE eq.session_id = s.session_id AND eq.event_type = 'qualitychange'
+       ORDER BY eq.timestamp DESC LIMIT 1) AS current_quality,
+      (SELECT payload->>'label' FROM events ec
+       WHERE ec.session_id = s.session_id AND ec.event_type = 'texttrackchange'
+       ORDER BY ec.timestamp DESC LIMIT 1) AS caption_label,
+      (SELECT COUNT(*) FROM events eb
+       WHERE eb.session_id = s.session_id AND eb.event_type = 'bufferstart')::int AS buffer_count,
+      (SELECT COALESCE(SUM((eb.payload->>'bufferDuration')::float), 0) FROM events eb
+       WHERE eb.session_id = s.session_id AND eb.event_type = 'bufferend') AS total_buffer_secs,
+      (SELECT COUNT(*) FROM events eq
+       WHERE eq.session_id = s.session_id AND eq.event_type = 'qualitychange')::int AS quality_changes
+    FROM sessions s
+    INNER JOIN LATERAL (
+      SELECT playhead, timestamp FROM events e
+      WHERE e.session_id = s.session_id ORDER BY e.timestamp DESC LIMIT 1
+    ) latest ON true
+    WHERE s.video_id = ${videoId} AND latest.timestamp >= NOW() - INTERVAL '5 minutes'
+    ORDER BY COALESCE(s.viewer_id, s.fingerprint_id), latest.timestamp DESC
+  `;
+
+  // C. All sessions for this video
+  const sessions = await sql`
+    SELECT
+      s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
+      s.started_at, s.ended_at, s.percent_watched, s.completed,
+      v.title AS video_title, v.duration AS video_duration,
+      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
+      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
+      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
+    FROM sessions s
+    LEFT JOIN videos v ON v.video_id = s.video_id
+    WHERE s.video_id = ${videoId}
+    ORDER BY s.started_at DESC
+    LIMIT 100
+  `;
+
+  return json({
+    video: videoRows[0],
+    active_viewers: activeViewers,
+    sessions,
   });
 }
 

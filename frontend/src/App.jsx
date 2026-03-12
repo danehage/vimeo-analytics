@@ -6,11 +6,13 @@ import TabBar from './components/layout/TabBar';
 import StatCard from './components/shared/StatCard';
 import OverviewTab from './components/overview/OverviewTab';
 import VideoTable from './components/videos/VideoTable';
+import VideoDetail from './components/videos/VideoDetail';
 import SessionList from './components/sessions/SessionList';
 import SessionDetail from './components/sessions/SessionDetail';
 import ViewerList from './components/viewers/ViewerList';
 import ViewerDetail from './components/viewers/ViewerDetail';
 import EventFeed from './components/EventFeed';
+import LiveEventsTab from './components/live/LiveEventsTab';
 
 // Import all 4 engagement sub-components
 import SeekHeatmap from './components/engagement/SeekHeatmap';
@@ -24,17 +26,20 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("viewers");
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedViewer, setSelectedViewer] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   const handleNavChange = (id) => {
     setActiveNav(id);
     setSelectedSession(null);
     setSelectedViewer(null);
+    setSelectedVideo(null);
   };
 
   const handleTabChange = (id) => {
     setActiveTab(id);
     setSelectedSession(null);
     setSelectedViewer(null);
+    setSelectedVideo(null);
   };
 
   return (
@@ -88,7 +93,11 @@ export default function App() {
 
               {activeTab === "overview" && <OverviewTab />}
 
-              {activeTab === "videos" && <VideoTable />}
+              {activeTab === "videos" && (
+                selectedVideo
+                  ? <VideoDetail video={selectedVideo} onBack={() => setSelectedVideo(null)} onSelectSession={(s) => { setSelectedVideo(null); setActiveTab("sessions"); setSelectedSession(s); }} />
+                  : <VideoTable onSelect={setSelectedVideo} />
+              )}
 
               {activeTab === "sessions" && (
                 selectedSession
@@ -100,6 +109,10 @@ export default function App() {
                 selectedViewer
                   ? <ViewerDetail viewer={selectedViewer} onBack={() => setSelectedViewer(null)} onSelectSession={(s) => { setSelectedViewer(null); setActiveTab("sessions"); setSelectedSession(s); }} />
                   : <ViewerList onSelect={setSelectedViewer} />
+              )}
+
+              {activeTab === "live-events" && (
+                <LiveEventsTab onSelectSession={(s) => { setActiveTab("sessions"); setSelectedSession(s); }} />
               )}
 
               {activeTab === "engagement" && (

@@ -33,7 +33,7 @@ export default function OverviewTab() {
         <div style={{ display: "flex", gap: 12 }}>
           <EnterpriseStatCard label="Caption adoption" value={captionAdoption} sub="of sessions" accent={V.teal} isNew />
           <EnterpriseStatCard label="Seek events" value={seekEvents} sub="scrubs & replays" accent={V.purple} isNew />
-          <EnterpriseStatCard label="Buffer incidents" value={bufferRate} sub="of sessions" accent={V.red} isNew />
+          <EnterpriseStatCard label="High buffer sessions" value={bufferRate} sub="sessions >3% buffer" accent={V.red} isNew />
           <EnterpriseStatCard label="Quality changes" value={qualityChanges} sub="manual switches" accent={V.amber} isNew />
         </div>
       </div>

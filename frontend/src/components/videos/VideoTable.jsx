@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { V } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 
-export default function VideoTable() {
+export default function VideoTable({ onSelect }) {
   const [sortCol, setSortCol] = useState("views");
   const [sortDir, setSortDir] = useState("desc");
   const { data, loading } = usePolling('/api/analytics/videos');
@@ -49,7 +49,7 @@ export default function VideoTable() {
               ["finishes", "Finishes"],
               ["captionPct", "Caption adoption"],
               ["seekEvents", "Seek events"],
-              ["bufferRate", "Buffer rate"],
+              ["bufferRate", "High buffer %"],
             ].map(([col, label]) => (
               <th
                 key={col}
@@ -77,6 +77,7 @@ export default function VideoTable() {
           {sorted.map(v => (
             <tr
               key={v.videoId || v.title}
+              onClick={() => onSelect?.(v)}
               style={{ borderBottom: `1px solid ${V.borderLight}`, cursor: "pointer" }}
               onMouseEnter={e => e.currentTarget.style.background = V.active}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}

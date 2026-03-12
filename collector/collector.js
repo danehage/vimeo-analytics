@@ -73,6 +73,7 @@
       playhead: payload.seconds || 0,
       timestamp: new Date().toISOString(),
       video_duration: VIDEO_DURATION,
+      is_live: !!CONFIG.isLive,
       payload: payload,
     };
 
@@ -166,6 +167,7 @@
         playhead: seconds,
         timestamp: new Date().toISOString(),
         video_duration: VIDEO_DURATION,
+        is_live: !!CONFIG.isLive,
         payload: { seconds },
       };
       navigator.sendBeacon(ENDPOINT, new Blob([JSON.stringify(data)], { type: 'application/json' }));

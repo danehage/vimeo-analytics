@@ -6,6 +6,7 @@ const TABS = [
   { id: "sessions", label: "Sessions", isNew: true },
   { id: "viewers", label: "Viewers", isNew: true },
   { id: "engagement", label: "Engagement" },
+  { id: "live-events", label: "Live Events", isNew: true },
 ];
 
 export default function TabBar({ activeTab, onTabChange }) {

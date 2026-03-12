@@ -12,7 +12,7 @@ export default function BufferRates() {
 
   return (
     <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
-      <SectionHeader title="Buffer rate by video" sub="% of sessions with buffer events" />
+      <SectionHeader title="High buffer rate by video" sub="% of sessions with >3% buffer time" />
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {BUFFER_DATA.map(v => (
           <div key={v.title}>
