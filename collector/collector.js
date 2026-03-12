@@ -44,7 +44,21 @@
   let lastTimeupdateSent = 0;
 
   function getViewerId() {
-    return window.VimeoAnalyticsConfig?.viewerId || null;
+    if (window.VimeoAnalyticsConfig?.viewerId) {
+      return window.VimeoAnalyticsConfig.viewerId;
+    }
+    try {
+      const stored = localStorage.getItem('vidharbor_viewer');
+      if (stored) {
+        const { email, expires } = JSON.parse(stored);
+        if (email && (!expires || Date.now() < expires)) {
+          return email;
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return null;
   }
 
   function sendEvent(eventType, payload) {
