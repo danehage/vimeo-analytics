@@ -330,10 +330,12 @@ async function handleSessions(params, sql) {
         s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
         s.started_at, s.ended_at, s.percent_watched, s.completed,
         s.identified_at, s.identified_via,
+        v.title AS video_title, v.duration AS video_duration,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
       FROM sessions s
+      LEFT JOIN videos v ON v.video_id = s.video_id
       WHERE s.video_id = ${videoId}
       ORDER BY s.started_at DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -345,10 +347,12 @@ async function handleSessions(params, sql) {
         s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
         s.started_at, s.ended_at, s.percent_watched, s.completed,
         s.identified_at, s.identified_via,
+        v.title AS video_title, v.duration AS video_duration,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
         (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
       FROM sessions s
+      LEFT JOIN videos v ON v.video_id = s.video_id
       ORDER BY s.started_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
