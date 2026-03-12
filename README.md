@@ -54,11 +54,11 @@ The collector is hosted by the Worker itself at `/collector.js`, so deploying to
 
 ## Features
 
-### Five Dashboard Tabs — All Wired to Live API
+### Six Dashboard Tabs — All Wired to Live API
 
-**Overview** — Account-level KPIs pulled from `/api/analytics/summary`: views, unique viewers, total watch time, avg % watched, caption adoption, seek events, buffer incidents, quality changes. Includes a retention curve and event breakdown chart. All stats update in real time as new sessions come in.
+**Overview** — Account-level KPIs pulled from `/api/analytics/summary`: views, unique viewers, total watch time, avg % watched, caption adoption, seek events, high buffer sessions (>3% buffer time threshold), quality changes. Includes a retention curve and event breakdown chart. All stats update in real time as new sessions come in.
 
-**By Video** — Sortable table fetched from `/api/analytics/videos` with standard columns (views, unique viewers, avg %, finishes) plus deep analytics columns with caption adoption, seek events, and buffer rate per video.
+**By Video** — Sortable table fetched from `/api/analytics/videos` with standard columns (views, unique viewers, avg %, finishes) plus deep analytics columns with caption adoption, seek events, and high buffer %. Click any video to drill into a detail page with aggregate stats and a filtered session list.
 
 **Sessions** — Live session list from `/api/analytics/sessions` with drill-down into individual sessions. Sessions from instrumented pages (like vidharbor.com) get a green `live` badge. Each session detail page fetches full event data from `/api/analytics/sessions/:id` and includes:
 - A visual "scrub map" showing exactly what was watched, skipped, and rewound
@@ -66,6 +66,8 @@ The collector is hosted by the Worker itself at `/collector.js`, so deploying to
 - Dynamic insight callouts based on actual patterns (e.g., multiple buffer events + early abandonment, or seeks combined with caption usage suggesting comprehension difficulty)
 
 **Viewers** — Viewer list from `/api/analytics/viewers` with fingerprint-based tracking and retroactive identity resolution. Summary stats (total, identified, anonymous, avg engagement) come from the API. When a viewer logs in, all prior anonymous sessions are attributed to them. Per-viewer profiles fetch from `/api/analytics/viewers/:fp` with video history, session history, and engagement patterns.
+
+**Live Events** — For Vimeo live streams. Shows currently-streaming events with a pulsing red LIVE badge, current viewer count, and a "Currently Watching" panel with per-viewer metrics (quality, captions, buffers, experience indicator). Past live events are listed in a table with aggregate stats and a retention chart once the stream ends. Polls `/api/analytics/live-events` every 10 seconds. To tag a stream as live, set `VimeoAnalyticsConfig.isLive = true` in the collector config.
 
 **Engagement** — Seek heatmap (most replayed sections), caption adoption by video, quality distribution, and buffer rates with source badges.
 
@@ -127,7 +129,8 @@ vimeo-deep-analytics/
         │   │   ├── RetentionChart.jsx
         │   │   └── EventBreakdown.jsx  # Fetches event counts from API
         │   ├── videos/
-        │   │   └── VideoTable.jsx      # Fetches /api/analytics/videos
+        │   │   ├── VideoTable.jsx      # Fetches /api/analytics/videos
+        │   │   └── VideoDetail.jsx     # Video drill-down with stats + sessions
         │   ├── sessions/
         │   │   ├── SessionList.jsx     # Fetches /api/analytics/sessions
         │   │   ├── SessionDetail.jsx   # Fetches /api/analytics/sessions/:id
@@ -135,6 +138,8 @@ vimeo-deep-analytics/
         │   ├── viewers/
         │   │   ├── ViewerList.jsx      # Fetches /api/analytics/viewers
         │   │   └── ViewerDetail.jsx    # Fetches /api/analytics/viewers/:fp
+        │   ├── live/
+        │   │   └── LiveEventsTab.jsx   # Live events list + detail + retention chart
         │   ├── engagement/
         │   │   ├── SeekHeatmap.jsx
         │   │   ├── CaptionAdoption.jsx
@@ -179,6 +184,14 @@ window.VimeoAnalyticsConfig = {
 };
 ```
 
+**For live streams:**
+```js
+window.VimeoAnalyticsConfig = {
+  endpoint: 'https://vimeo-analytics.hagemann-dane.workers.dev/api/events',
+  isLive: true
+};
+```
+
 ---
 
 ## API Endpoints
@@ -202,6 +215,8 @@ window.VimeoAnalyticsConfig = {
 | GET | `/api/analytics/sessions/:id` | Full session with all events |
 | GET | `/api/analytics/viewers` | Viewer list with summary. Accepts `?status=all\|identified\|anonymous` |
 | GET | `/api/analytics/viewers/:fp` | Full viewer profile with sessions, videos, recent events |
+| GET | `/api/analytics/live-events` | Live event videos with active status and aggregate stats |
+| GET | `/api/analytics/live-events/:id` | Live event detail with active viewers and per-session metrics |
 | GET | `/api/analytics/recent-events` | Last 20 events (EventFeed) |
 
 ### Static Assets
@@ -218,7 +233,7 @@ Four tables in Neon serverless Postgres:
 - **events** — Raw player events with session/video/viewer linkage and JSONB payload. UUIDs auto-generated by Postgres.
 - **sessions** — Aggregated session records (not recomputed from events). Upserted on every event.
 - **viewers** — Materialized viewer profiles updated on every event and on identity resolution.
-- **videos** — Video metadata (title, duration). Upserted from event payloads.
+- **videos** — Video metadata (title, duration, is_live flag). Upserted from event payloads. Once a video is tagged live, it stays live.
 
 See `schema.sql` for the full schema with indexes.
 
