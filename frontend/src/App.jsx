@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { V } from './constants/theme';
 import TopNav from './components/layout/TopNav';
 import Sidebar from './components/layout/Sidebar';
@@ -21,12 +21,101 @@ import QualityDistribution from './components/engagement/QualityDistribution';
 import BufferRates from './components/engagement/BufferRates';
 import CaptionLanguages from './components/engagement/CaptionLanguages';
 
+// --- Hash-based routing ---
+const VALID_TABS = ["overview", "videos", "sessions", "viewers", "engagement", "live-events"];
+
+function buildHash(nav, tab, sessionId, viewerFp, videoId) {
+  if (nav !== "deep") return "#/dashboard";
+  if (sessionId) return `#/deep/sessions/${sessionId}`;
+  if (viewerFp) return `#/deep/viewers/${viewerFp}`;
+  if (videoId) return `#/deep/videos/${videoId}`;
+  return `#/deep/${tab || "viewers"}`;
+}
+
+function parseHash(hash) {
+  const path = hash.replace(/^#\/?/, "");
+  const parts = path.split("/").filter(Boolean);
+
+  if (!parts.length || parts[0] === "dashboard") {
+    return { nav: "dashboard", tab: "viewers", sessionId: null, viewerFp: null, videoId: null };
+  }
+  if (parts[0] === "deep") {
+    const tab = parts[1] || "viewers";
+    if (tab === "sessions" && parts[2]) {
+      return { nav: "deep", tab: "sessions", sessionId: parts[2], viewerFp: null, videoId: null };
+    }
+    if (tab === "viewers" && parts[2]) {
+      return { nav: "deep", tab: "viewers", sessionId: null, viewerFp: parts[2], videoId: null };
+    }
+    if (tab === "videos" && parts[2]) {
+      return { nav: "deep", tab: "videos", sessionId: null, viewerFp: null, videoId: parts[2] };
+    }
+    return { nav: "deep", tab: VALID_TABS.includes(tab) ? tab : "viewers", sessionId: null, viewerFp: null, videoId: null };
+  }
+  return { nav: "deep", tab: "viewers", sessionId: null, viewerFp: null, videoId: null };
+}
+
 export default function App() {
-  const [activeNav, setActiveNav] = useState("deep");
-  const [activeTab, setActiveTab] = useState("viewers");
-  const [selectedSession, setSelectedSession] = useState(null);
-  const [selectedViewer, setSelectedViewer] = useState(null);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const initial = parseHash(window.location.hash);
+  const [activeNav, setActiveNav] = useState(initial.nav);
+  const [activeTab, setActiveTab] = useState(initial.tab);
+  const [selectedSession, setSelectedSession] = useState(
+    initial.sessionId ? { session_id: initial.sessionId, shortId: '#' + initial.sessionId.slice(0, 6) } : null
+  );
+  const [selectedViewer, setSelectedViewer] = useState(
+    initial.viewerFp ? { fingerprintId: initial.viewerFp, status: "unknown" } : null
+  );
+  const [selectedVideo, setSelectedVideo] = useState(
+    initial.videoId ? { video_id: initial.videoId } : null
+  );
+
+  // Suppress pushState when handling popstate
+  const skipPush = useRef(false);
+  const isInitial = useRef(true);
+
+  // Push hash on state change
+  useEffect(() => {
+    if (skipPush.current) {
+      skipPush.current = false;
+      return;
+    }
+    const newHash = buildHash(
+      activeNav,
+      activeTab,
+      selectedSession?.session_id || null,
+      selectedViewer?.fingerprintId || null,
+      selectedVideo?.video_id || null,
+    );
+    if (window.location.hash !== newHash) {
+      if (isInitial.current) {
+        window.history.replaceState(null, "", newHash);
+      } else {
+        window.history.pushState(null, "", newHash);
+      }
+    }
+    isInitial.current = false;
+  }, [activeNav, activeTab, selectedSession, selectedViewer, selectedVideo]);
+
+  // Listen to popstate (back/forward)
+  useEffect(() => {
+    const onPop = () => {
+      const state = parseHash(window.location.hash);
+      skipPush.current = true;
+      setActiveNav(state.nav);
+      setActiveTab(state.tab);
+      setSelectedSession(
+        state.sessionId ? { session_id: state.sessionId, shortId: '#' + state.sessionId.slice(0, 6) } : null
+      );
+      setSelectedViewer(
+        state.viewerFp ? { fingerprintId: state.viewerFp, status: "unknown" } : null
+      );
+      setSelectedVideo(
+        state.videoId ? { video_id: state.videoId } : null
+      );
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const handleNavChange = (id) => {
     setActiveNav(id);

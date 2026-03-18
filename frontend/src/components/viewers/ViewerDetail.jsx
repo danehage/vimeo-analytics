@@ -5,8 +5,26 @@ import IdentityBadge from '../shared/IdentityBadge';
 import { usePolling } from '../../hooks/usePolling';
 
 export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
-  const identified = viewer.status === "identified";
   const { data, loading } = usePolling(`/api/analytics/viewers/${viewer.fingerprintId}`, 30000);
+
+  // Derive identity from API data when available, fall back to viewer prop
+  const identified = data?.viewer?.viewer_id
+    ? true
+    : viewer.status === "unknown"
+      ? false
+      : viewer.status === "identified";
+
+  // Merge API viewer data into viewer prop for display
+  const resolvedViewer = data?.viewer ? {
+    ...viewer,
+    identifiedAs: data.viewer.viewer_id || viewer.identifiedAs,
+    identifiedVia: data.viewer.identified_via || viewer.identifiedVia,
+    identifiedOn: data.viewer.identified_at ? new Date(data.viewer.identified_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.identifiedOn,
+    firstSeen: data.viewer.first_seen ? new Date(data.viewer.first_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.firstSeen || '—',
+    lastSeen: data.viewer.last_seen ? new Date(data.viewer.last_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.lastSeen || '—',
+    captionsAlwaysOn: viewer.captionsAlwaysOn ?? false,
+    status: identified ? "identified" : "anonymous",
+  } : viewer;
 
   // Use API data if available, fall back to viewer prop
   const sessions = (data?.sessions || []).map(s => ({
@@ -37,7 +55,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
   const totalSessions = data?.viewer?.total_sessions || viewer.totalSessions;
   const totalWatchMins = Math.round(data?.viewer?.total_watch_mins || viewer.totalWatchMins || 0);
   const totalVideos = videos.length || viewer.totalVideos || 0;
-  const avgPct = viewer.avgWatchPct || 0;
+  const avgPct = data?.viewer?.avg_engagement ? Math.round(data.viewer.avg_engagement) : (viewer.avgWatchPct || 0);
 
   return (
     <div>
@@ -45,7 +63,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: V.textMuted }}>
         <span onClick={onBack} style={{ cursor: "pointer", color: V.teal, fontWeight: 500 }}>← Viewers</span>
         <span>›</span>
-        <span style={{ color: V.text }}>{identified ? viewer.identifiedAs : `Anonymous · ${viewer.fingerprintId}`}</span>
+        <span style={{ color: V.text }}>{identified ? resolvedViewer.identifiedAs : `Anonymous · ${resolvedViewer.fingerprintId}`}</span>
       </div>
 
       {/* Identity card */}
@@ -64,18 +82,18 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
               color: identified ? "#0e1216" : V.textLight,
               fontWeight: 700, flexShrink: 0,
             }}>
-              {identified && viewer.identifiedAs ? viewer.identifiedAs.split(/[.@]/)[0][0].toUpperCase() : "?"}
+              {identified && resolvedViewer.identifiedAs ? resolvedViewer.identifiedAs.split(/[.@]/)[0][0].toUpperCase() : "?"}
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 {identified
-                  ? <span style={{ fontSize: 18, fontWeight: 700, color: V.text }}>{viewer.identifiedAs}</span>
+                  ? <span style={{ fontSize: 18, fontWeight: 700, color: V.text }}>{resolvedViewer.identifiedAs}</span>
                   : <span style={{ fontSize: 15, fontWeight: 600, color: V.textMid }}>Anonymous Viewer</span>}
-                <IdentityBadge viewer={viewer} />
+                <IdentityBadge viewer={resolvedViewer} />
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <FingerprintBadge id={viewer.fingerprintId} />
-                <span style={{ fontSize: 12, color: V.textLight }}>First seen {viewer.firstSeen} · Last seen {viewer.lastSeen}</span>
+                <FingerprintBadge id={resolvedViewer.fingerprintId} />
+                <span style={{ fontSize: 12, color: V.textLight }}>First seen {resolvedViewer.firstSeen} · Last seen {resolvedViewer.lastSeen}</span>
               </div>
             </div>
           </div>
@@ -84,12 +102,12 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
         {/* Identity resolution story */}
         {identified ? (
           <div style={{ padding: "12px 16px", background: V.greenLight, border: "1px solid rgba(48,164,108,0.25)", borderRadius: V.cardRadius, fontSize: 12, color: V.green, lineHeight: 1.6 }}>
-            <strong>Identity resolved{viewer.identifiedOn ? ` on ${viewer.identifiedOn}` : ''}</strong>{viewer.identifiedVia ? ` via ${viewer.identifiedVia}` : ''}.<br />
-            All {totalSessions} prior anonymous sessions from fingerprint <code style={{ background: "rgba(48,164,108,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>{viewer.fingerprintId}</code> have been retroactively attributed to this user.
+            <strong>Identity resolved{resolvedViewer.identifiedOn ? ` on ${resolvedViewer.identifiedOn}` : ''}</strong>{resolvedViewer.identifiedVia ? ` via ${resolvedViewer.identifiedVia}` : ''}.<br />
+            All {totalSessions} prior anonymous sessions from fingerprint <code style={{ background: "rgba(48,164,108,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>{resolvedViewer.fingerprintId}</code> have been retroactively attributed to this user.
           </div>
         ) : (
           <div style={{ padding: "12px 16px", background: V.bg, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, fontSize: 12, color: V.textMid, lineHeight: 1.6 }}>
-            <strong>Not yet identified.</strong> This viewer's sessions are tracked by browser fingerprint only. If they log in or submit a form on an instrumented page, their identity will be retroactively linked to all sessions under <code style={{ fontFamily: "monospace" }}>{viewer.fingerprintId}</code>.
+            <strong>Not yet identified.</strong> This viewer's sessions are tracked by browser fingerprint only. If they log in or submit a form on an instrumented page, their identity will be retroactively linked to all sessions under <code style={{ fontFamily: "monospace" }}>{resolvedViewer.fingerprintId}</code>.
           </div>
         )}
 
@@ -100,7 +118,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
             ["Videos watched", totalVideos, V.text],
             ["Total watch time", `${totalWatchMins}m`, V.text],
             ["Avg engagement", `${avgPct}%`, avgPct >= 70 ? V.green : avgPct >= 40 ? V.textMid : V.amber],
-            ["Captions", viewer.captionsAlwaysOn ? "Always on" : "Off", viewer.captionsAlwaysOn ? V.teal : V.textLight],
+            ["Captions", resolvedViewer.captionsAlwaysOn ? "Always on" : "Off", resolvedViewer.captionsAlwaysOn ? V.teal : V.textLight],
           ].map(([label, val, color]) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: V.textLight, marginBottom: 3 }}>{label}</div>
