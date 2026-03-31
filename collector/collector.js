@@ -42,6 +42,7 @@
   let VIDEO_ID = null;
   let VIDEO_DURATION = null;
   let lastTimeupdateSent = 0;
+  let lastKnownPlayhead = 0; // Cache for beforeunload
 
   function getViewerId() {
     if (window.VimeoAnalyticsConfig?.viewerId) {
@@ -62,8 +63,8 @@
   }
 
   function sendEvent(eventType, payload) {
+    lastKnownPlayhead = payload.seconds || lastKnownPlayhead; // Update cache on any event with playhead
     const data = {
-      event_id: crypto.randomUUID(),
       session_id: SESSION_ID,
       fingerprint_id: FINGERPRINT_ID,
       video_id: VIDEO_ID,
@@ -122,6 +123,7 @@
   });
 
   player.on('timeupdate', (data) => {
+    lastKnownPlayhead = data.seconds; // Always cache latest playhead
     const now = data.seconds;
     if (now - lastTimeupdateSent >= TIMEUPDATE_INTERVAL) {
       lastTimeupdateSent = now;
@@ -153,24 +155,21 @@
     });
   });
 
-  // Session end on page unload
+  // Session end on page unload — use cached playhead to avoid async race condition
   window.addEventListener('beforeunload', () => {
-    player.getCurrentTime().then(seconds => {
-      const data = {
-        event_id: crypto.randomUUID(),
-        session_id: SESSION_ID,
-        fingerprint_id: FINGERPRINT_ID,
-        video_id: VIDEO_ID,
-        viewer_id: getViewerId(),
-        embed_url: window.location.href,
-        event_type: 'session_end',
-        playhead: seconds,
-        timestamp: new Date().toISOString(),
-        video_duration: VIDEO_DURATION,
-        is_live: !!CONFIG.isLive,
-        payload: { seconds },
-      };
-      navigator.sendBeacon(ENDPOINT, new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    });
+    const data = {
+      session_id: SESSION_ID,
+      fingerprint_id: FINGERPRINT_ID,
+      video_id: VIDEO_ID,
+      viewer_id: getViewerId(),
+      embed_url: window.location.href,
+      event_type: 'session_end',
+      playhead: lastKnownPlayhead,
+      timestamp: new Date().toISOString(),
+      video_duration: VIDEO_DURATION,
+      is_live: !!CONFIG.isLive,
+      payload: { seconds: lastKnownPlayhead },
+    };
+    navigator.sendBeacon(ENDPOINT, new Blob([JSON.stringify(data)], { type: 'application/json' }));
   });
 })();

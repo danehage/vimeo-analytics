@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { V, fmtSecs } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
+import ErrorMessage from '../shared/ErrorMessage';
 
 export default function SessionList({ onSelect }) {
   const [filterVideo, setFilterVideo] = useState("all");
-  const { data, loading } = usePolling('/api/analytics/sessions');
+  const { data, loading, error, refetch } = usePolling('/api/analytics/sessions');
 
   const sessions = (data?.sessions || []).map(s => ({
     id: s.session_id?.slice(0, 6) || '—',
@@ -37,6 +38,10 @@ export default function SessionList({ onSelect }) {
   })];
 
   const filtered = filterVideo === "all" ? sessions : sessions.filter(s => s.videoId === filterVideo);
+
+  if (error) {
+    return <ErrorMessage error={error} onRetry={refetch} />;
+  }
 
   if (loading && sessions.length === 0) {
     return <div style={{ fontSize: 13, color: V.textMuted, padding: 20 }}>Loading sessions...</div>;

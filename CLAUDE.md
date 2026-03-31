@@ -68,7 +68,8 @@ vimeo-deep-analytics/
         │   │   ├── SectionHeader.jsx
         │   │   ├── MiniBar.jsx
         │   │   ├── FingerprintBadge.jsx
-        │   │   └── IdentityBadge.jsx
+        │   │   ├── IdentityBadge.jsx
+        │   │   └── ErrorMessage.jsx
         │   ├── overview/
         │   │   ├── OverviewTab.jsx
         │   │   ├── RetentionChart.jsx
@@ -290,7 +291,8 @@ CREATE TABLE videos (
   video_id   VARCHAR PRIMARY KEY,
   title      TEXT,
   duration   FLOAT,
-  created_at TIMESTAMPTZ
+  created_at TIMESTAMPTZ,
+  is_live    BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX idx_events_video_id      ON events(video_id);
@@ -301,6 +303,7 @@ CREATE INDEX idx_events_timestamp     ON events(timestamp);
 CREATE INDEX idx_events_session_id    ON events(session_id);
 CREATE INDEX idx_sessions_fingerprint ON sessions(fingerprint_id);
 CREATE INDEX idx_sessions_viewer_id   ON sessions(viewer_id);
+CREATE INDEX idx_sessions_video_id    ON sessions(video_id);
 CREATE INDEX idx_viewers_viewer_id    ON viewers(viewer_id);
 ```
 

@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { V } from '../../constants/theme';
 import FingerprintBadge from '../shared/FingerprintBadge';
 import IdentityBadge from '../shared/IdentityBadge';
+import ErrorMessage from '../shared/ErrorMessage';
 import { usePolling } from '../../hooks/usePolling';
 
 export default function ViewerList({ onSelect }) {
   const [filter, setFilter] = useState("all");
-  const { data, loading } = usePolling('/api/analytics/viewers');
+  const { data, loading, error, refetch } = usePolling('/api/analytics/viewers');
 
   const summary = data?.summary || { total: 0, identified: 0, anonymous: 0, avg_engagement: 0 };
 
@@ -28,6 +29,10 @@ export default function ViewerList({ onSelect }) {
   const filtered = filter === "all" ? viewers
     : filter === "identified" ? viewers.filter(v => v.status === "identified")
     : viewers.filter(v => v.status === "anonymous");
+
+  if (error) {
+    return <ErrorMessage error={error} onRetry={refetch} />;
+  }
 
   if (loading && viewers.length === 0) {
     return <div style={{ fontSize: 13, color: V.textMuted, padding: 20 }}>Loading viewers...</div>;

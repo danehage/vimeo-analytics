@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
 
@@ -7,36 +7,42 @@ export function usePolling(path, intervalMs = 30000) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const intervalRef = useRef(null);
+  const cancelledRef = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchData() {
-      try {
-        const res = await fetch(`${API_BASE}${path}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!cancelled) {
-          setData(json);
-          setLoading(false);
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message);
-          setLoading(false);
-        }
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}${path}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (!cancelledRef.current) {
+        setData(json);
+        setLoading(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!cancelledRef.current) {
+        setError(err.message);
+        setLoading(false);
       }
     }
+  }, [path]);
+
+  useEffect(() => {
+    cancelledRef.current = false;
 
     fetchData();
     intervalRef.current = setInterval(fetchData, intervalMs);
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       clearInterval(intervalRef.current);
     };
-  }, [path, intervalMs]);
+  }, [path, intervalMs, fetchData]);
 
-  return { data, loading, error };
+  const refetch = useCallback(() => {
+    setLoading(true);
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch };
 }

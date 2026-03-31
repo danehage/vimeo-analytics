@@ -3,10 +3,15 @@ import StatCard from '../shared/StatCard';
 import EnterpriseStatCard from '../shared/EnterpriseStatCard';
 import RetentionChart from './RetentionChart';
 import EventBreakdown from './EventBreakdown';
+import ErrorMessage from '../shared/ErrorMessage';
 import { usePolling } from '../../hooks/usePolling';
 
 export default function OverviewTab() {
-  const { data } = usePolling('/api/analytics/summary');
+  const { data, error, refetch } = usePolling('/api/analytics/summary');
+
+  if (error) {
+    return <ErrorMessage error={error} onRetry={refetch} />;
+  }
 
   const views = data?.total_views ?? '—';
   const uniqueViewers = data?.unique_viewers ?? '—';
