@@ -68,6 +68,7 @@
   function sendEvent(eventType, payload) {
     lastKnownPlayhead = payload.seconds || lastKnownPlayhead; // Update cache on any event with playhead
     const data = {
+      event_id: crypto.randomUUID(),
       session_id: SESSION_ID,
       fingerprint_id: FINGERPRINT_ID,
       video_id: VIDEO_ID,
@@ -175,6 +176,7 @@
   // Session end on page unload — use cached playhead to avoid async race condition
   window.addEventListener('beforeunload', () => {
     const data = {
+      event_id: crypto.randomUUID(),
       session_id: SESSION_ID,
       fingerprint_id: FINGERPRINT_ID,
       video_id: VIDEO_ID,

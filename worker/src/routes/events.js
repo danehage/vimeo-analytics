@@ -33,6 +33,9 @@ function validateEvent(body) {
   if (!body.video_id || typeof body.video_id !== 'string') {
     errors.push('video_id is required');
   }
+  if (body.event_id != null && !UUID_REGEX.test(body.event_id)) {
+    errors.push('event_id must be a valid UUID');
+  }
 
   return errors;
 }
@@ -47,15 +50,24 @@ export async function handleEvents(request, sql) {
   }
 
   const {
-    session_id, video_id, viewer_id, fingerprint_id,
+    event_id, session_id, video_id, viewer_id, fingerprint_id,
     embed_url, event_type, playhead, timestamp, video_duration, is_live, payload
   } = body;
 
-  // Insert event (Postgres generates event_id via gen_random_uuid())
-  await sql`
-    INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload)
-    VALUES (${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
-  `;
+  // Insert event with idempotency — client-provided event_id deduplicates retries
+  if (event_id) {
+    await sql`
+      INSERT INTO events (event_id, session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload)
+      VALUES (${event_id}, ${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
+      ON CONFLICT (event_id) DO NOTHING
+    `;
+  } else {
+    // Legacy clients without event_id — let Postgres generate one
+    await sql`
+      INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload)
+      VALUES (${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
+    `;
+  }
 
   // Upsert session — use payload.duration as fallback for live streams where video_duration is 0
   const effectiveDuration = video_duration > 0 ? video_duration : (payload?.duration || 0);
