@@ -1,21 +1,23 @@
 # Vimeo Deep Analytics
 
-A proof-of-concept analytics platform that captures granular player-level events from embedded Vimeo players and visualizes them in a dashboard that deliberately mimics Vimeo's native analytics UI. Built as an internal pitch tool to demonstrate what a "Deep Analytics" feature would look like if Vimeo shipped it natively.
+A proof-of-concept analytics platform that captures granular player-level events from embedded Vimeo players and surfaces them in a full analytics dashboard. Built to demonstrate what's possible with the Vimeo Player.js API beyond native aggregate stats — session-level tracking, viewer identity resolution, engagement heatmaps, and live stream monitoring, all wired to real data.
 
 **Live dashboard:** [analytics.danecast.net](https://analytics.danecast.net)
 **Live collector demo:** [vidharbor.com/danecast](https://www.vidharbor.com/danecast) — real Vimeo embeds instrumented with the collector, generating live session data
 
 ---
 
-## The Pitch
+## Why This Exists
 
-Vimeo's native analytics shows aggregate views, impressions, and rough retention estimates. This project captures what actually happens inside a viewing session — every seek, caption toggle, quality change, buffer event, and watch-progress tick — and visualizes it at the account, video, session, and viewer level.
+Vimeo's native analytics covers aggregate views, impressions, and rough retention estimates. That's enough for marketing video — but not for enterprise L&D teams embedding training content on intranets, LMS platforms, or SharePoint who need to know if employees are actually watching.
 
-**The argument:** Vimeo already controls `player.js`. They instrument it once and every embed everywhere starts sending this data. Zero infrastructure cost until a customer pays for it. This POC proves the data is valuable and shows what the UI looks like the day it ships.
+This project captures what happens inside a viewing session: every seek, caption toggle, quality change, buffer event, and watch-progress tick. It visualizes that data at the account, video, session, and viewer level — the kind of granularity that L&D managers need and that existing player analytics don't expose.
 
-**Target audience:**
-- Vimeo product and engineering — internal pitch for a native Deep Analytics feature
-- Enterprise L&D clients on intranets, LMS platforms, SharePoint — who need to know if employees are actually watching training content
+The collector hooks into Vimeo's Player.js API entirely in the browser. No Vimeo API credentials required. No server-side player instrumentation. Just a one-line snippet on any page with a Vimeo embed. 
+
+This system uses entirely existing Vimeo technology, and would be feasible for an existing Vimeo customer. As long as you control the HTML of the page on which you are embedding the Vimeo player, you will be able to collect this data.
+
+**Primary use case:** Enterprise L&D and internal comms — proving completion and engagement for training content embedded outside an LMS.
 
 ---
 
@@ -241,14 +243,14 @@ See `schema.sql` for the full schema with indexes.
 
 ## Design System
 
-The UI uses a dark theme matching Vimeo's live analytics dashboard at vimeo.com/analytics, so it looks like it was built by Vimeo's design team. Color tokens were extracted directly from the production site.
+The UI uses a dark theme consistent with modern video platform design language. 
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | `bg` | `#0e1216` | Page background |
 | `white` | `#151b21` | Card/panel backgrounds |
 | `tableHeaderBg` | `#1d242c` | Table headers, input backgrounds |
-| `teal` | `#03c1eb` | Vimeo primary accent |
+| `teal` | `#03c1eb` | Primary accent |
 | `text` | `#f9fafb` | Primary text |
 | `textMid` | `#e4e9ef` | Secondary text |
 | `textMuted` | `#b6c0cc` | Muted text |
@@ -301,7 +303,7 @@ npm run build
 ```
 
 ### Collector
-Add the one-liner JS snippet (see Collector Snippet section above) to any page with a Vimeo embed. For page builders like VidHarbor, paste it into the custom JS section.
+Add the one-liner JS snippet (see Collector Snippet section above) to any page with a Vimeo embed.
 
 ---
 
@@ -316,33 +318,25 @@ Add the one-liner JS snippet (see Collector Snippet section above) to any page w
 
 ---
 
-## Competitive Context
+## Industry Context
 
-**Wistia** is the primary competitive reference — session-level analytics, viewer identity stitching, engagement heatmaps. But Wistia targets marketing video.
-
-**This project targets L&D/internal comms** — Vimeo's home turf. The buyer is the L&D manager asking "did my employees actually watch the training?" SCORM covers LMS-tracked completions, not embedded players outside the LMS. This closes that gap natively.
-
-**Business model:**
-- Feature flag per account, off by default — zero cost until revenue
-- Enterprise add-on pricing
-- Raw event export for BI-equipped customers
-- Start with one design partner customer as proof point
+Tools like Wistia offer session-level analytics and viewer identity stitching — but target marketing video. The gap is in enterprise L&D: SCORM handles LMS-tracked completions, but doesn't cover Vimeo-embedded players outside the LMS. This POC explores what closing that gap looks like at the player event level, using only browser-accessible APIs.
 
 ---
 
 ## What This Is Not
 
 - Not a replacement for Vimeo's native analytics — additive
-- Not a product being sold — proof of concept and internal pitch tool
-- Not dependent on Vimeo API credentials — runs off player.js browser events only
+- Not a product being sold — possible for all Vimeo customers today
+- Not dependent on Vimeo API credentials — runs off Player.js browser events only
 - Not a privacy risk — viewer_id null by default, fingerprinting uses only browser signals
 
 ---
 
-## Critical Constraint
+## Constraints
 
-The collector snippet only works on pages you control. Videos watched directly on vimeo.com are out of scope for this POC. The native Vimeo version would close this gap entirely since Vimeo controls player.js.
+The collector snippet only works on pages you control. Videos watched directly on vimeo.com are out of scope — the collector needs to be injected on the host page alongside the embed.
 
 ---
 
-Built by Dane Hagemann, Principal Solutions Engineer at Vimeo.
+Built by Dane Hagemann — [danecast.net](https://danecast.net)
