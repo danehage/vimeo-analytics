@@ -4,13 +4,6 @@ import { V } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
 import { usePolling } from '../../hooks/usePolling';
 
-// Seed data per video for demo visual weight
-const SEED_HOTSPOTS = {
-  "sec_training_3": [23,41,89,134,178,112,67,34,19,8,45,67,23,12,5,3,1,0,0,0],
-  "onboarding_2024": [56,78,45,23,12,8,34,89,120,95,67,34,12,5,2,1,0,0,0,0],
-  "product_demo_q1": [12,23,34,45,56,78,90,78,56,45,34,23,12,8,5,3,2,1,0,0],
-};
-
 function buildSegmentLabel(bucket, duration) {
   if (!duration) {
     const min = Math.floor(bucket * 0.5);
@@ -38,7 +31,7 @@ function CustomTooltip({ active, payload, label }) {
 export default function SeekHeatmap() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const { data: videosData } = usePolling('/api/analytics/videos', 30000);
-  const { data: hotspotsData } = usePolling(
+  const { data: hotspotsData, loading } = usePolling(
     selectedVideo ? `/api/analytics/hotspots/${selectedVideo}` : null,
     30000
   );
@@ -55,14 +48,6 @@ export default function SeekHeatmap() {
       segment: buildSegmentLabel(h.bucket, duration),
       replays: h.seeks,
     }));
-  } else if (selectedVideo && SEED_HOTSPOTS[selectedVideo]) {
-    chartData = SEED_HOTSPOTS[selectedVideo].map((val, i) => ({
-      segment: buildSegmentLabel(i, duration),
-      replays: val,
-    }));
-  } else if (!selectedVideo && videos.length > 0) {
-    // No video selected yet — prompt to pick one
-    chartData = null;
   } else {
     chartData = null;
   }
@@ -108,7 +93,7 @@ export default function SeekHeatmap() {
         </ResponsiveContainer>
       ) : (
         <div style={{ height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: V.textLight, fontSize: 13 }}>
-          {selectedVideo ? "No seek data for this video yet" : "Select a video to view seek heatmap"}
+          {loading ? "Loading seek data..." : selectedVideo ? "No seek data for this video yet" : "Select a video to view seek heatmap"}
         </div>
       )}
     </div>

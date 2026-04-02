@@ -10,6 +10,14 @@ export function usePolling(path, intervalMs = 30000) {
   const cancelledRef = useRef(false);
 
   const fetchData = useCallback(async () => {
+    if (!path) {
+      if (!cancelledRef.current) {
+        setData(null);
+        setLoading(false);
+        setError(null);
+      }
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}${path}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -31,7 +39,9 @@ export function usePolling(path, intervalMs = 30000) {
     cancelledRef.current = false;
 
     fetchData();
-    intervalRef.current = setInterval(fetchData, intervalMs);
+    if (path) {
+      intervalRef.current = setInterval(fetchData, intervalMs);
+    }
 
     return () => {
       cancelledRef.current = true;
