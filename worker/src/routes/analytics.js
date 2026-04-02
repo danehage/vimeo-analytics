@@ -454,35 +454,73 @@ async function handleSessions(params, sql) {
   if (videoId) {
     countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE video_id = ${videoId}`;
     rows = await sql`
+      WITH session_page AS (
+        SELECT session_id, video_id, viewer_id, fingerprint_id, embed_url,
+               started_at, ended_at, percent_watched, completed,
+               identified_at, identified_via
+        FROM sessions
+        WHERE video_id = ${videoId}
+        ORDER BY started_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      ),
+      event_counts AS (
+        SELECT
+          e.session_id,
+          COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
+          COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
+          COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
+        FROM events e
+        INNER JOIN session_page sp ON sp.session_id = e.session_id
+        WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
+        GROUP BY e.session_id
+      )
       SELECT
         s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
         s.started_at, s.ended_at, s.percent_watched, s.completed,
         s.identified_at, s.identified_via,
         v.title AS video_title, v.duration AS video_duration,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-      FROM sessions s
+        COALESCE(ec.caption_events, 0) AS caption_events,
+        COALESCE(ec.seek_events, 0) AS seek_events,
+        COALESCE(ec.buffer_events, 0) AS buffer_events
+      FROM session_page s
       LEFT JOIN videos v ON v.video_id = s.video_id
-      WHERE s.video_id = ${videoId}
+      LEFT JOIN event_counts ec ON ec.session_id = s.session_id
       ORDER BY s.started_at DESC
-      LIMIT ${limit} OFFSET ${offset}
     `;
   } else {
     countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions`;
     rows = await sql`
+      WITH session_page AS (
+        SELECT session_id, video_id, viewer_id, fingerprint_id, embed_url,
+               started_at, ended_at, percent_watched, completed,
+               identified_at, identified_via
+        FROM sessions
+        ORDER BY started_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      ),
+      event_counts AS (
+        SELECT
+          e.session_id,
+          COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
+          COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
+          COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
+        FROM events e
+        INNER JOIN session_page sp ON sp.session_id = e.session_id
+        WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
+        GROUP BY e.session_id
+      )
       SELECT
         s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
         s.started_at, s.ended_at, s.percent_watched, s.completed,
         s.identified_at, s.identified_via,
         v.title AS video_title, v.duration AS video_duration,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-      FROM sessions s
+        COALESCE(ec.caption_events, 0) AS caption_events,
+        COALESCE(ec.seek_events, 0) AS seek_events,
+        COALESCE(ec.buffer_events, 0) AS buffer_events
+      FROM session_page s
       LEFT JOIN videos v ON v.video_id = s.video_id
+      LEFT JOIN event_counts ec ON ec.session_id = s.session_id
       ORDER BY s.started_at DESC
-      LIMIT ${limit} OFFSET ${offset}
     `;
   }
 
@@ -538,51 +576,111 @@ async function handleViewers(params, sql) {
 
   if (status === 'identified') {
     rows = await sql`
+      WITH session_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(DISTINCT video_id)::int AS unique_videos,
+          COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_engagement
+        FROM sessions
+        GROUP BY fingerprint_id
+      ),
+      caption_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(*)::int AS caption_events
+        FROM events
+        WHERE event_type = 'texttrackchange'
+        GROUP BY fingerprint_id
+      )
       SELECT
         vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
         vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
-        (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id)::int AS unique_videos,
-        COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id), 0) AS avg_engagement,
-        (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange')::int AS caption_events
+        COALESCE(sa.unique_videos, 0) AS unique_videos,
+        COALESCE(sa.avg_engagement, 0) AS avg_engagement,
+        COALESCE(ca.caption_events, 0) AS caption_events
       FROM viewers vw
+      LEFT JOIN session_agg sa ON sa.fingerprint_id = vw.fingerprint_id
+      LEFT JOIN caption_agg ca ON ca.fingerprint_id = vw.fingerprint_id
       WHERE vw.viewer_id IS NOT NULL
       ORDER BY vw.last_seen DESC
     `;
   } else if (status === 'anonymous') {
     rows = await sql`
+      WITH session_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(DISTINCT video_id)::int AS unique_videos,
+          COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_engagement
+        FROM sessions
+        GROUP BY fingerprint_id
+      ),
+      caption_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(*)::int AS caption_events
+        FROM events
+        WHERE event_type = 'texttrackchange'
+        GROUP BY fingerprint_id
+      )
       SELECT
         vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
         vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
-        (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id)::int AS unique_videos,
-        COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id), 0) AS avg_engagement,
-        (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange')::int AS caption_events
+        COALESCE(sa.unique_videos, 0) AS unique_videos,
+        COALESCE(sa.avg_engagement, 0) AS avg_engagement,
+        COALESCE(ca.caption_events, 0) AS caption_events
       FROM viewers vw
+      LEFT JOIN session_agg sa ON sa.fingerprint_id = vw.fingerprint_id
+      LEFT JOIN caption_agg ca ON ca.fingerprint_id = vw.fingerprint_id
       WHERE vw.viewer_id IS NULL
       ORDER BY vw.last_seen DESC
     `;
   } else {
     rows = await sql`
+      WITH session_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(DISTINCT video_id)::int AS unique_videos,
+          COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_engagement
+        FROM sessions
+        GROUP BY fingerprint_id
+      ),
+      caption_agg AS (
+        SELECT
+          fingerprint_id,
+          COUNT(*)::int AS caption_events
+        FROM events
+        WHERE event_type = 'texttrackchange'
+        GROUP BY fingerprint_id
+      )
       SELECT
         vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
         vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
-        (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id)::int AS unique_videos,
-        COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id), 0) AS avg_engagement,
-        (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange')::int AS caption_events
+        COALESCE(sa.unique_videos, 0) AS unique_videos,
+        COALESCE(sa.avg_engagement, 0) AS avg_engagement,
+        COALESCE(ca.caption_events, 0) AS caption_events
       FROM viewers vw
+      LEFT JOIN session_agg sa ON sa.fingerprint_id = vw.fingerprint_id
+      LEFT JOIN caption_agg ca ON ca.fingerprint_id = vw.fingerprint_id
       ORDER BY vw.last_seen DESC
     `;
   }
 
   // Summary counts
   const summary = await sql`
+    WITH viewer_engagement AS (
+      SELECT
+        fingerprint_id,
+        AVG(percent_watched) AS avg_pw
+      FROM sessions
+      GROUP BY fingerprint_id
+    )
     SELECT
       COUNT(*)::int AS total,
-      COUNT(*) FILTER (WHERE viewer_id IS NOT NULL)::int AS identified,
-      COUNT(*) FILTER (WHERE viewer_id IS NULL)::int AS anonymous,
-      COALESCE(ROUND(AVG(
-        (SELECT AVG(s.percent_watched) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id)
-      )::numeric, 1), 0) AS avg_engagement
+      COUNT(*) FILTER (WHERE vw.viewer_id IS NOT NULL)::int AS identified,
+      COUNT(*) FILTER (WHERE vw.viewer_id IS NULL)::int AS anonymous,
+      COALESCE(ROUND(AVG(ve.avg_pw)::numeric, 1), 0) AS avg_engagement
     FROM viewers vw
+    LEFT JOIN viewer_engagement ve ON ve.fingerprint_id = vw.fingerprint_id
   `;
 
   return json({
@@ -608,17 +706,35 @@ async function handleViewerDetail(fingerprintId, sql) {
   }
 
   const sessions = await sql`
+    WITH viewer_sessions AS (
+      SELECT session_id, video_id, started_at, ended_at,
+             percent_watched, completed, embed_url,
+             identified_at, identified_via
+      FROM sessions
+      WHERE fingerprint_id = ${fingerprintId}
+    ),
+    event_counts AS (
+      SELECT
+        e.session_id,
+        COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
+        COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
+        COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
+      FROM events e
+      INNER JOIN viewer_sessions vs ON vs.session_id = e.session_id
+      WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
+      GROUP BY e.session_id
+    )
     SELECT
       s.session_id, s.video_id, s.started_at, s.ended_at,
       s.percent_watched, s.completed, s.embed_url,
       s.identified_at, s.identified_via,
       v.title AS video_title, v.duration AS video_duration,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-    FROM sessions s
+      COALESCE(ec.caption_events, 0) AS caption_events,
+      COALESCE(ec.seek_events, 0) AS seek_events,
+      COALESCE(ec.buffer_events, 0) AS buffer_events
+    FROM viewer_sessions s
     LEFT JOIN videos v ON v.video_id = s.video_id
-    WHERE s.fingerprint_id = ${fingerprintId}
+    LEFT JOIN event_counts ec ON ec.session_id = s.session_id
     ORDER BY s.started_at DESC
   `;
 
@@ -763,18 +879,36 @@ async function handleLiveEventDetail(videoId, sql) {
 
   // C. All sessions for this video
   const sessions = await sql`
+    WITH video_sessions AS (
+      SELECT session_id, video_id, viewer_id, fingerprint_id, embed_url,
+             started_at, ended_at, percent_watched, completed
+      FROM sessions
+      WHERE video_id = ${videoId}
+      ORDER BY started_at DESC
+      LIMIT 100
+    ),
+    event_counts AS (
+      SELECT
+        e.session_id,
+        COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
+        COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
+        COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
+      FROM events e
+      INNER JOIN video_sessions vs ON vs.session_id = e.session_id
+      WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
+      GROUP BY e.session_id
+    )
     SELECT
       s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
       s.started_at, s.ended_at, s.percent_watched, s.completed,
       v.title AS video_title, v.duration AS video_duration,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-      (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-    FROM sessions s
+      COALESCE(ec.caption_events, 0) AS caption_events,
+      COALESCE(ec.seek_events, 0) AS seek_events,
+      COALESCE(ec.buffer_events, 0) AS buffer_events
+    FROM video_sessions s
     LEFT JOIN videos v ON v.video_id = s.video_id
-    WHERE s.video_id = ${videoId}
+    LEFT JOIN event_counts ec ON ec.session_id = s.session_id
     ORDER BY s.started_at DESC
-    LIMIT 100
   `;
 
   return json({
