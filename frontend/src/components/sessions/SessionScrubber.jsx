@@ -14,6 +14,23 @@ export default function SessionScrubber({ session }) {
     }
   });
 
+  // Fill gaps between consecutive watched/play buckets — if two timeupdate
+  // events land at bucket 10 and 14, the viewer was watching continuously
+  // through 11-13 as well. Only bridge across unwatched gaps, not seeks.
+  let lastWatched = -1;
+  for (let i = 0; i < 100; i++) {
+    if (buckets[i] === "watched") {
+      if (lastWatched >= 0) {
+        for (let j = lastWatched + 1; j < i; j++) {
+          if (buckets[j] === "unwatched") buckets[j] = "watched";
+        }
+      }
+      lastWatched = i;
+    } else if (buckets[i] === "seeked") {
+      lastWatched = -1; // seek breaks continuity
+    }
+  }
+
   return (
     <div>
       {/* Timeline bar */}
