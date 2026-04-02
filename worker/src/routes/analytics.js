@@ -672,10 +672,15 @@ async function handleLiveEvents(sql) {
         SELECT 1 FROM events e
         WHERE e.video_id = v.video_id
           AND e.timestamp >= NOW() - INTERVAL '30 seconds'
+          AND e.event_type = 'timeupdate'
+          AND (v.duration = 0 OR v.duration IS NULL
+               OR ABS(COALESCE((e.payload->>'duration')::float, 0) - v.duration) > 1)
       ) AS is_active,
       (SELECT COUNT(DISTINCT e.session_id) FROM events e
        WHERE e.video_id = v.video_id
-         AND e.timestamp >= NOW() - INTERVAL '30 seconds')::int AS current_viewers
+         AND e.timestamp >= NOW() - INTERVAL '30 seconds'
+         AND (v.duration = 0 OR v.duration IS NULL
+              OR ABS(COALESCE((e.payload->>'duration')::float, 0) - v.duration) > 1))::int AS current_viewers
     FROM videos v
     LEFT JOIN sessions s ON s.video_id = v.video_id
     WHERE v.is_live = true
@@ -706,10 +711,15 @@ async function handleLiveEventDetail(videoId, sql) {
         SELECT 1 FROM events e
         WHERE e.video_id = v.video_id
           AND e.timestamp >= NOW() - INTERVAL '30 seconds'
+          AND e.event_type = 'timeupdate'
+          AND (v.duration = 0 OR v.duration IS NULL
+               OR ABS(COALESCE((e.payload->>'duration')::float, 0) - v.duration) > 1)
       ) AS is_active,
       (SELECT COUNT(DISTINCT e.session_id) FROM events e
        WHERE e.video_id = v.video_id
-         AND e.timestamp >= NOW() - INTERVAL '30 seconds')::int AS current_viewers
+         AND e.timestamp >= NOW() - INTERVAL '30 seconds'
+         AND (v.duration = 0 OR v.duration IS NULL
+              OR ABS(COALESCE((e.payload->>'duration')::float, 0) - v.duration) > 1))::int AS current_viewers
     FROM videos v
     LEFT JOIN sessions s ON s.video_id = v.video_id
     WHERE v.video_id = ${videoId}
@@ -739,11 +749,15 @@ async function handleLiveEventDetail(videoId, sql) {
       (SELECT COUNT(*) FROM events eq
        WHERE eq.session_id = s.session_id AND eq.event_type = 'qualitychange')::int AS quality_changes
     FROM sessions s
+    JOIN videos v ON v.video_id = s.video_id
     INNER JOIN LATERAL (
-      SELECT playhead, timestamp FROM events e
+      SELECT playhead, timestamp, video_duration, payload FROM events e
       WHERE e.session_id = s.session_id ORDER BY e.timestamp DESC LIMIT 1
     ) latest ON true
-    WHERE s.video_id = ${videoId} AND latest.timestamp >= NOW() - INTERVAL '30 seconds'
+    WHERE s.video_id = ${videoId}
+      AND latest.timestamp >= NOW() - INTERVAL '30 seconds'
+      AND (v.duration = 0 OR v.duration IS NULL
+           OR ABS(COALESCE((latest.payload->>'duration')::float, 0) - v.duration) > 1)
     ORDER BY COALESCE(s.viewer_id, s.fingerprint_id), latest.timestamp DESC
   `;
 

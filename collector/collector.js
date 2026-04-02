@@ -43,6 +43,9 @@
   let VIDEO_DURATION = null;
   let lastTimeupdateSent = 0;
   let lastKnownPlayhead = 0; // Cache for beforeunload
+  let isStillLive = !!CONFIG.isLive;
+  let lastReportedDuration = 0;
+  let stableDurationCount = 0;
 
   function getViewerId() {
     if (window.VimeoAnalyticsConfig?.viewerId) {
@@ -74,7 +77,7 @@
       playhead: payload.seconds || 0,
       timestamp: new Date().toISOString(),
       video_duration: VIDEO_DURATION,
-      is_live: !!CONFIG.isLive,
+      is_live: isStillLive,
       payload: payload,
     };
 
@@ -121,6 +124,23 @@
 
   player.on('timeupdate', (data) => {
     lastKnownPlayhead = data.seconds; // Always cache latest playhead
+
+    // Detect live→VOD transition: during live, data.duration grows each tick.
+    // Once the VOD replaces the stream, duration becomes fixed. Two consecutive
+    // timeupdates with the same non-zero duration means it's now a VOD.
+    if (isStillLive && data.duration > 0) {
+      if (data.duration === lastReportedDuration) {
+        stableDurationCount++;
+        if (stableDurationCount >= 2) {
+          isStillLive = false;
+          VIDEO_DURATION = data.duration;
+        }
+      } else {
+        lastReportedDuration = data.duration;
+        stableDurationCount = 0;
+      }
+    }
+
     const now = data.seconds;
     if (now - lastTimeupdateSent >= TIMEUPDATE_INTERVAL) {
       lastTimeupdateSent = now;
@@ -164,7 +184,7 @@
       playhead: lastKnownPlayhead,
       timestamp: new Date().toISOString(),
       video_duration: VIDEO_DURATION,
-      is_live: !!CONFIG.isLive,
+      is_live: isStillLive,
       payload: { seconds: lastKnownPlayhead },
     };
     navigator.sendBeacon(ENDPOINT, new Blob([JSON.stringify(data)], { type: 'application/json' }));
