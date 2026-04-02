@@ -273,42 +273,92 @@ async function handleVideos(params, sql) {
 // ---------------------------------------------------------------------------
 
 async function handleRetention(videoId, sql) {
-  // Bucket timeupdate events into 100 segments (0-99% of duration)
+  // Get per-session bucket hits so we can gap-fill continuous playback
   const rows = await sql`
     SELECT
+      e.session_id,
       CASE
-        WHEN v.duration > 0 THEN FLOOR(e.playhead / v.duration * 100)::int
+        WHEN v.duration > 0 THEN LEAST(FLOOR(e.playhead / v.duration * 100)::int, 99)
         ELSE 0
-      END AS bucket,
-      COUNT(DISTINCT e.session_id)::int AS viewers
+      END AS bucket
     FROM events e
     JOIN videos v ON v.video_id = e.video_id
     WHERE e.video_id = ${videoId}
-      AND e.event_type = 'timeupdate'
+      AND e.event_type IN ('timeupdate', 'play', 'pause', 'ended')
       AND v.duration > 0
-    GROUP BY bucket
-    ORDER BY bucket ASC
+    ORDER BY e.session_id, bucket ASC
   `;
 
-  // Get total sessions for this video to compute percentages
-  const totalResult = await sql`
-    SELECT COUNT(DISTINCT session_id)::int AS total
-    FROM events
-    WHERE video_id = ${videoId} AND event_type = 'timeupdate'
+  // Also get seek buckets per session so we know where continuity breaks
+  const seekRows = await sql`
+    SELECT
+      e.session_id,
+      CASE
+        WHEN v.duration > 0 THEN LEAST(FLOOR(e.playhead / v.duration * 100)::int, 99)
+        ELSE 0
+      END AS bucket
+    FROM events e
+    JOIN videos v ON v.video_id = e.video_id
+    WHERE e.video_id = ${videoId}
+      AND e.event_type = 'seeked'
+      AND v.duration > 0
   `;
 
-  const total = totalResult[0]?.total || 1;
+  // Build seek set per session
+  const seekSets = {};
+  seekRows.forEach(r => {
+    if (!seekSets[r.session_id]) seekSets[r.session_id] = new Set();
+    seekSets[r.session_id].add(r.bucket);
+  });
 
-  // Build full 100-bucket array, filling gaps with 0
-  const bucketMap = {};
-  rows.forEach(r => { bucketMap[r.bucket] = r.viewers; });
+  // Group buckets by session, then gap-fill between consecutive hits
+  const sessionBuckets = {};
+  rows.forEach(r => {
+    if (!sessionBuckets[r.session_id]) sessionBuckets[r.session_id] = new Set();
+    sessionBuckets[r.session_id].add(r.bucket);
+  });
+
+  // Gap-fill: if two watched buckets have only unwatched gaps between them
+  // (no seek in between), assume continuous playback
+  const filledBuckets = {};
+  for (const [sessionId, buckets] of Object.entries(sessionBuckets)) {
+    const sorted = [...buckets].sort((a, b) => a - b);
+    const seeks = seekSets[sessionId] || new Set();
+    const filled = new Set(sorted);
+
+    for (let idx = 0; idx < sorted.length - 1; idx++) {
+      const from = sorted[idx];
+      const to = sorted[idx + 1];
+      // Only fill if gap is reasonable (not a massive jump) and no seek in between
+      if (to - from <= 10) {
+        let hasSeek = false;
+        for (let b = from + 1; b < to; b++) {
+          if (seeks.has(b)) { hasSeek = true; break; }
+        }
+        if (!hasSeek) {
+          for (let b = from + 1; b < to; b++) filled.add(b);
+        }
+      }
+    }
+    filledBuckets[sessionId] = filled;
+  }
+
+  // Aggregate: count distinct sessions per bucket
+  const bucketCounts = new Array(100).fill(0);
+  for (const filled of Object.values(filledBuckets)) {
+    for (const b of filled) {
+      if (b >= 0 && b < 100) bucketCounts[b]++;
+    }
+  }
+
+  const total = Object.keys(sessionBuckets).length || 1;
 
   const retention = [];
   for (let i = 0; i < 100; i++) {
     retention.push({
       bucket: i,
-      viewers: bucketMap[i] || 0,
-      percent: Math.round(((bucketMap[i] || 0) / total) * 100),
+      viewers: bucketCounts[i],
+      percent: Math.round((bucketCounts[i] / total) * 100),
     });
   }
 
@@ -620,16 +670,12 @@ async function handleLiveEvents(sql) {
       MAX(s.ended_at) AS last_activity,
       EXISTS(
         SELECT 1 FROM events e
-        JOIN sessions s2 ON s2.session_id = e.session_id
         WHERE e.video_id = v.video_id
-          AND e.timestamp >= NOW() - INTERVAL '10 minutes'
-          AND s2.completed = false
+          AND e.timestamp >= NOW() - INTERVAL '30 seconds'
       ) AS is_active,
       (SELECT COUNT(DISTINCT e.session_id) FROM events e
-       JOIN sessions s2 ON s2.session_id = e.session_id
        WHERE e.video_id = v.video_id
-         AND e.timestamp >= NOW() - INTERVAL '5 minutes'
-         AND s2.completed = false)::int AS current_viewers
+         AND e.timestamp >= NOW() - INTERVAL '30 seconds')::int AS current_viewers
     FROM videos v
     LEFT JOIN sessions s ON s.video_id = v.video_id
     WHERE v.is_live = true
@@ -658,16 +704,12 @@ async function handleLiveEventDetail(videoId, sql) {
       MAX(s.ended_at) AS last_activity,
       EXISTS(
         SELECT 1 FROM events e
-        JOIN sessions s2 ON s2.session_id = e.session_id
         WHERE e.video_id = v.video_id
-          AND e.timestamp >= NOW() - INTERVAL '10 minutes'
-          AND s2.completed = false
+          AND e.timestamp >= NOW() - INTERVAL '30 seconds'
       ) AS is_active,
       (SELECT COUNT(DISTINCT e.session_id) FROM events e
-       JOIN sessions s2 ON s2.session_id = e.session_id
        WHERE e.video_id = v.video_id
-         AND e.timestamp >= NOW() - INTERVAL '5 minutes'
-         AND s2.completed = false)::int AS current_viewers
+         AND e.timestamp >= NOW() - INTERVAL '30 seconds')::int AS current_viewers
     FROM videos v
     LEFT JOIN sessions s ON s.video_id = v.video_id
     WHERE v.video_id = ${videoId}
@@ -701,7 +743,7 @@ async function handleLiveEventDetail(videoId, sql) {
       SELECT playhead, timestamp FROM events e
       WHERE e.session_id = s.session_id ORDER BY e.timestamp DESC LIMIT 1
     ) latest ON true
-    WHERE s.video_id = ${videoId} AND latest.timestamp >= NOW() - INTERVAL '5 minutes'
+    WHERE s.video_id = ${videoId} AND latest.timestamp >= NOW() - INTERVAL '30 seconds'
     ORDER BY COALESCE(s.viewer_id, s.fingerprint_id), latest.timestamp DESC
   `;
 

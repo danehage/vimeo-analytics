@@ -78,16 +78,13 @@
       payload: payload,
     };
 
-    // Use sendBeacon for reliability, fall back to fetch
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    if (!navigator.sendBeacon(ENDPOINT, blob)) {
-      fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        keepalive: true,
-      }).catch(() => {});
-    }
+    // Use fetch for immediate delivery; sendBeacon is only used for beforeunload
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      keepalive: true,
+    }).catch(() => {});
   }
 
   // Find first Vimeo iframe

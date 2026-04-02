@@ -57,8 +57,9 @@ export async function handleEvents(request, sql) {
     VALUES (${session_id}, ${video_id}, ${viewer_id}, ${fingerprint_id}, ${embed_url}, ${event_type}, ${playhead}, ${timestamp}, ${video_duration}, ${JSON.stringify(payload)})
   `;
 
-  // Upsert session — track if this is a new session
-  const percentWatched = video_duration > 0 ? Math.min((playhead / video_duration) * 100, 100) : 0;
+  // Upsert session — use payload.duration as fallback for live streams where video_duration is 0
+  const effectiveDuration = video_duration > 0 ? video_duration : (payload?.duration || 0);
+  const percentWatched = effectiveDuration > 0 ? Math.min((playhead / effectiveDuration) * 100, 100) : 0;
   const completed = event_type === 'ended' || percentWatched >= 95;
 
   const sessionResult = await sql`
@@ -90,7 +91,7 @@ export async function handleEvents(request, sql) {
   }
 
   // Upsert video — fetch title from Vimeo oEmbed if missing
-  if (video_id && (video_duration || is_live)) {
+  if (video_id && (effectiveDuration || is_live)) {
     const existing = await sql`SELECT title FROM videos WHERE video_id = ${video_id}`;
     let title = existing[0]?.title || null;
 
@@ -108,10 +109,10 @@ export async function handleEvents(request, sql) {
 
     await sql`
       INSERT INTO videos (video_id, title, duration, created_at, is_live)
-      VALUES (${video_id}, ${title}, ${video_duration}, NOW(), ${!!is_live})
+      VALUES (${video_id}, ${title}, ${effectiveDuration}, NOW(), ${!!is_live})
       ON CONFLICT (video_id) DO UPDATE SET
         title = COALESCE(NULLIF(${title}, ''), videos.title),
-        duration = COALESCE(NULLIF(${video_duration}, 0), videos.duration),
+        duration = GREATEST(COALESCE(NULLIF(${effectiveDuration}, 0), videos.duration), videos.duration),
         is_live = videos.is_live OR ${!!is_live}
     `;
   }
