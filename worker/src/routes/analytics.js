@@ -215,55 +215,112 @@ async function handleDaily(params, sql) {
 // ---------------------------------------------------------------------------
 
 async function handleVideos(params, sql) {
-  const rows = await sql`
-    WITH session_stats AS (
-      SELECT
-        video_id,
-        COUNT(*)::int AS views,
-        COUNT(DISTINCT COALESCE(viewer_id, fingerprint_id))::int AS unique_viewers,
-        COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_percent_watched,
-        COUNT(*) FILTER (WHERE completed)::int AS finishes
-      FROM sessions
-      GROUP BY video_id
-    ),
-    event_stats AS (
-      SELECT
-        video_id,
-        COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_sessions,
-        COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events
-      FROM events
-      GROUP BY video_id
-    ),
-    buffer_stats AS (
-      SELECT
-        video_id,
-        COUNT(DISTINCT session_id)::int AS high_buffer_sessions
-      FROM (
-        SELECT video_id, session_id
+  const { from, to } = dateFilter(params);
+
+  let rows;
+  if (from && to) {
+    rows = await sql`
+      WITH session_stats AS (
+        SELECT
+          video_id,
+          COUNT(*)::int AS views,
+          COUNT(DISTINCT COALESCE(viewer_id, fingerprint_id))::int AS unique_viewers,
+          COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_percent_watched,
+          COUNT(*) FILTER (WHERE completed)::int AS finishes
+        FROM sessions
+        WHERE started_at >= ${from} AND started_at <= ${to}
+        GROUP BY video_id
+      ),
+      event_stats AS (
+        SELECT
+          video_id,
+          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_sessions,
+          COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events
         FROM events
-        WHERE event_type = 'bufferend'
-        GROUP BY video_id, session_id
-        HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
-      ) hb
-      GROUP BY video_id
-    )
-    SELECT
-      ss.video_id,
-      v.title,
-      v.duration,
-      ss.views,
-      ss.unique_viewers,
-      ss.avg_percent_watched,
-      ss.finishes,
-      COALESCE(LEAST(ROUND(es.caption_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 100), 0) AS caption_adoption,
-      COALESCE(es.seek_events, 0) AS seek_events,
-      COALESCE(ROUND(bs.high_buffer_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 0) AS buffer_rate
-    FROM session_stats ss
-    LEFT JOIN videos v ON v.video_id = ss.video_id
-    LEFT JOIN event_stats es ON es.video_id = ss.video_id
-    LEFT JOIN buffer_stats bs ON bs.video_id = ss.video_id
-    ORDER BY ss.views DESC
-  `;
+        WHERE timestamp >= ${from} AND timestamp <= ${to}
+        GROUP BY video_id
+      ),
+      buffer_stats AS (
+        SELECT
+          video_id,
+          COUNT(DISTINCT session_id)::int AS high_buffer_sessions
+        FROM (
+          SELECT video_id, session_id
+          FROM events
+          WHERE event_type = 'bufferend' AND timestamp >= ${from} AND timestamp <= ${to}
+          GROUP BY video_id, session_id
+          HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
+        ) hb
+        GROUP BY video_id
+      )
+      SELECT
+        ss.video_id,
+        v.title,
+        v.duration,
+        ss.views,
+        ss.unique_viewers,
+        ss.avg_percent_watched,
+        ss.finishes,
+        COALESCE(LEAST(ROUND(es.caption_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 100), 0) AS caption_adoption,
+        COALESCE(es.seek_events, 0) AS seek_events,
+        COALESCE(ROUND(bs.high_buffer_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 0) AS buffer_rate
+      FROM session_stats ss
+      LEFT JOIN videos v ON v.video_id = ss.video_id
+      LEFT JOIN event_stats es ON es.video_id = ss.video_id
+      LEFT JOIN buffer_stats bs ON bs.video_id = ss.video_id
+      ORDER BY ss.views DESC
+    `;
+  } else {
+    rows = await sql`
+      WITH session_stats AS (
+        SELECT
+          video_id,
+          COUNT(*)::int AS views,
+          COUNT(DISTINCT COALESCE(viewer_id, fingerprint_id))::int AS unique_viewers,
+          COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_percent_watched,
+          COUNT(*) FILTER (WHERE completed)::int AS finishes
+        FROM sessions
+        GROUP BY video_id
+      ),
+      event_stats AS (
+        SELECT
+          video_id,
+          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_sessions,
+          COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events
+        FROM events
+        GROUP BY video_id
+      ),
+      buffer_stats AS (
+        SELECT
+          video_id,
+          COUNT(DISTINCT session_id)::int AS high_buffer_sessions
+        FROM (
+          SELECT video_id, session_id
+          FROM events
+          WHERE event_type = 'bufferend'
+          GROUP BY video_id, session_id
+          HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
+        ) hb
+        GROUP BY video_id
+      )
+      SELECT
+        ss.video_id,
+        v.title,
+        v.duration,
+        ss.views,
+        ss.unique_viewers,
+        ss.avg_percent_watched,
+        ss.finishes,
+        COALESCE(LEAST(ROUND(es.caption_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 100), 0) AS caption_adoption,
+        COALESCE(es.seek_events, 0) AS seek_events,
+        COALESCE(ROUND(bs.high_buffer_sessions::numeric * 100.0 / NULLIF(ss.views, 0), 1), 0) AS buffer_rate
+      FROM session_stats ss
+      LEFT JOIN videos v ON v.video_id = ss.video_id
+      LEFT JOIN event_stats es ON es.video_id = ss.video_id
+      LEFT JOIN buffer_stats bs ON bs.video_id = ss.video_id
+      ORDER BY ss.views DESC
+    `;
+  }
 
   return json(rows);
 }
@@ -444,6 +501,7 @@ async function handleQuality(params, sql) {
 
 async function handleSessions(params, sql) {
   const videoId = params.get('videoId');
+  const { from, to } = dateFilter(params);
   const page = parseInt(params.get('page') || '1', 10);
   const limit = parseInt(params.get('limit') || '50', 10);
   const offset = (page - 1) * limit;
@@ -451,7 +509,24 @@ async function handleSessions(params, sql) {
   let rows;
   let countResult;
 
-  if (videoId) {
+  if (videoId && from && to) {
+    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE video_id = ${videoId} AND started_at >= ${from} AND started_at <= ${to}`;
+    rows = await sql`
+      SELECT
+        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
+        s.started_at, s.ended_at, s.percent_watched, s.completed,
+        s.identified_at, s.identified_via,
+        v.title AS video_title, v.duration AS video_duration,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
+      FROM sessions s
+      LEFT JOIN videos v ON v.video_id = s.video_id
+      WHERE s.video_id = ${videoId} AND s.started_at >= ${from} AND s.started_at <= ${to}
+      ORDER BY s.started_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+  } else if (videoId) {
     countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE video_id = ${videoId}`;
     rows = await sql`
       WITH session_page AS (
@@ -486,6 +561,23 @@ async function handleSessions(params, sql) {
       LEFT JOIN videos v ON v.video_id = s.video_id
       LEFT JOIN event_counts ec ON ec.session_id = s.session_id
       ORDER BY s.started_at DESC
+    `;
+  } else if (from && to) {
+    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE started_at >= ${from} AND started_at <= ${to}`;
+    rows = await sql`
+      SELECT
+        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
+        s.started_at, s.ended_at, s.percent_watched, s.completed,
+        s.identified_at, s.identified_via,
+        v.title AS video_title, v.duration AS video_duration,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
+        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
+      FROM sessions s
+      LEFT JOIN videos v ON v.video_id = s.video_id
+      WHERE s.started_at >= ${from} AND s.started_at <= ${to}
+      ORDER BY s.started_at DESC
+      LIMIT ${limit} OFFSET ${offset}
     `;
   } else {
     countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions`;
@@ -571,9 +663,74 @@ async function handleSessionDetail(sessionId, sql) {
 
 async function handleViewers(params, sql) {
   const status = params.get('status') || 'all';
+  const { from, to } = dateFilter(params);
 
+  // When date-filtered, we restrict to viewers who had sessions in the date range
   let rows;
 
+  if (from && to) {
+    // Filter viewers to those with sessions in the date range
+    const statusClause = status === 'identified' ? 'AND vw.viewer_id IS NOT NULL'
+      : status === 'anonymous' ? 'AND vw.viewer_id IS NULL'
+      : '';
+
+    // Since neon tagged templates don't support dynamic WHERE easily, branch by status
+    if (status === 'identified') {
+      rows = await sql`
+        SELECT
+          vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
+          vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
+          (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})::int AS unique_videos,
+          COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to}), 0) AS avg_engagement,
+          (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange' AND e.timestamp >= ${from} AND e.timestamp <= ${to})::int AS caption_events
+        FROM viewers vw
+        WHERE vw.viewer_id IS NOT NULL
+          AND EXISTS (SELECT 1 FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})
+        ORDER BY vw.last_seen DESC
+      `;
+    } else if (status === 'anonymous') {
+      rows = await sql`
+        SELECT
+          vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
+          vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
+          (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})::int AS unique_videos,
+          COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to}), 0) AS avg_engagement,
+          (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange' AND e.timestamp >= ${from} AND e.timestamp <= ${to})::int AS caption_events
+        FROM viewers vw
+        WHERE vw.viewer_id IS NULL
+          AND EXISTS (SELECT 1 FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})
+        ORDER BY vw.last_seen DESC
+      `;
+    } else {
+      rows = await sql`
+        SELECT
+          vw.fingerprint_id, vw.viewer_id, vw.identified_at, vw.identified_via,
+          vw.first_seen, vw.last_seen, vw.total_sessions, vw.total_watch_mins,
+          (SELECT COUNT(DISTINCT s.video_id) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})::int AS unique_videos,
+          COALESCE((SELECT ROUND(AVG(s.percent_watched)::numeric, 1) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to}), 0) AS avg_engagement,
+          (SELECT COUNT(*) FROM events e WHERE e.fingerprint_id = vw.fingerprint_id AND e.event_type = 'texttrackchange' AND e.timestamp >= ${from} AND e.timestamp <= ${to})::int AS caption_events
+        FROM viewers vw
+        WHERE EXISTS (SELECT 1 FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})
+        ORDER BY vw.last_seen DESC
+      `;
+    }
+
+    const summary = await sql`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE viewer_id IS NOT NULL)::int AS identified,
+        COUNT(*) FILTER (WHERE viewer_id IS NULL)::int AS anonymous,
+        COALESCE(ROUND(AVG(
+          (SELECT AVG(s.percent_watched) FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})
+        )::numeric, 1), 0) AS avg_engagement
+      FROM viewers vw
+      WHERE EXISTS (SELECT 1 FROM sessions s WHERE s.fingerprint_id = vw.fingerprint_id AND s.started_at >= ${from} AND s.started_at <= ${to})
+    `;
+
+    return json({ summary: summary[0], viewers: rows });
+  }
+
+  // No date filter - original logic
   if (status === 'identified') {
     rows = await sql`
       WITH session_agg AS (

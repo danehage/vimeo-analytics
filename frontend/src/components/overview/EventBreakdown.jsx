@@ -4,7 +4,7 @@ import { usePolling } from '../../hooks/usePolling';
 
 const EVENT_ORDER = ['play', 'pause', 'seeked', 'texttrackchange', 'qualitychange', 'volumechange', 'bufferstart'];
 
-export default function EventBreakdown() {
+export default function EventBreakdown({ dateParams = '' }) {
   const { data } = usePolling('/api/analytics/recent-events', 10000);
 
   // Count events from the recent-events endpoint as a proxy, or fall back
@@ -16,7 +16,10 @@ export default function EventBreakdown() {
   }
 
   // Also fetch the summary for total seek/buffer counts
-  const { data: summary } = usePolling('/api/analytics/summary');
+  const summaryPath = dateParams
+    ? `/api/analytics/summary?${dateParams}`
+    : '/api/analytics/summary';
+  const { data: summary } = usePolling(summaryPath);
 
   // Build breakdown from summary data if available, otherwise from recent events
   const breakdown = EVENT_ORDER.map(event => ({

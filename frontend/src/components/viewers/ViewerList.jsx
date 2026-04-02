@@ -5,9 +5,12 @@ import IdentityBadge from '../shared/IdentityBadge';
 import ErrorMessage from '../shared/ErrorMessage';
 import { usePolling } from '../../hooks/usePolling';
 
-export default function ViewerList({ onSelect }) {
+export default function ViewerList({ onSelect, dateParams = '' }) {
   const [filter, setFilter] = useState("all");
-  const { data, loading, error, refetch } = usePolling('/api/analytics/viewers');
+  const viewersPath = dateParams
+    ? `/api/analytics/viewers?${dateParams}`
+    : '/api/analytics/viewers';
+  const { data, loading, error, refetch } = usePolling(viewersPath);
 
   const summary = data?.summary || { total: 0, identified: 0, anonymous: 0, avg_engagement: 0 };
 

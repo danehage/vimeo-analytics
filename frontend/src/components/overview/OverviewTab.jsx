@@ -6,8 +6,11 @@ import EventBreakdown from './EventBreakdown';
 import ErrorMessage from '../shared/ErrorMessage';
 import { usePolling } from '../../hooks/usePolling';
 
-export default function OverviewTab() {
-  const { data, error, refetch } = usePolling('/api/analytics/summary');
+export default function OverviewTab({ dateParams = '' }) {
+  const summaryPath = dateParams
+    ? `/api/analytics/summary?${dateParams}`
+    : '/api/analytics/summary';
+  const { data, error, refetch } = usePolling(summaryPath);
 
   if (error) {
     return <ErrorMessage error={error} onRetry={refetch} />;
@@ -44,7 +47,7 @@ export default function OverviewTab() {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 16 }}>
         <RetentionChart />
-        <EventBreakdown />
+        <EventBreakdown dateParams={dateParams} />
       </div>
     </>
   );

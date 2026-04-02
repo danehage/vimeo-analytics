@@ -3,9 +3,12 @@ import { V, fmtSecs } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 import ErrorMessage from '../shared/ErrorMessage';
 
-export default function SessionList({ onSelect }) {
+export default function SessionList({ onSelect, dateParams = '' }) {
   const [filterVideo, setFilterVideo] = useState("all");
-  const { data, loading, error, refetch } = usePolling('/api/analytics/sessions');
+  const sessionsPath = dateParams
+    ? `/api/analytics/sessions?${dateParams}`
+    : '/api/analytics/sessions';
+  const { data, loading, error, refetch } = usePolling(sessionsPath);
 
   const sessions = (data?.sessions || []).map(s => ({
     id: s.session_id?.slice(0, 6) || '—',

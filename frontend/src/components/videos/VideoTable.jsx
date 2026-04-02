@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { V } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 
-export default function VideoTable({ onSelect }) {
+export default function VideoTable({ onSelect, dateParams = '' }) {
   const [sortCol, setSortCol] = useState("views");
   const [sortDir, setSortDir] = useState("desc");
-  const { data, loading } = usePolling('/api/analytics/videos');
+  const videosPath = dateParams
+    ? `/api/analytics/videos?${dateParams}`
+    : '/api/analytics/videos';
+  const { data, loading } = usePolling(videosPath);
 
   const videos = (data || []).map(v => ({
     title: v.title || v.video_id,

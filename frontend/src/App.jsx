@@ -13,6 +13,7 @@ import ViewerList from './components/viewers/ViewerList';
 import ViewerDetail from './components/viewers/ViewerDetail';
 import EventFeed from './components/EventFeed';
 import LiveEventsTab from './components/live/LiveEventsTab';
+import DateRangePicker from './components/shared/DateRangePicker';
 
 // Import all 4 engagement sub-components
 import SeekHeatmap from './components/engagement/SeekHeatmap';
@@ -59,6 +60,12 @@ export default function App() {
   const initial = parseHash(window.location.hash);
   const [activeNav, setActiveNav] = useState(initial.nav);
   const [activeTab, setActiveTab] = useState(initial.tab);
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
+
+  // Build query string suffix for date-filtered API calls
+  const dateParams = dateRange.from && dateRange.to
+    ? `from=${dateRange.from}&to=${dateRange.to}`
+    : '';
   const [selectedSession, setSelectedSession] = useState(
     initial.sessionId ? { session_id: initial.sessionId, shortId: '#' + initial.sessionId.slice(0, 6) } : null
   );
@@ -173,31 +180,29 @@ export default function App() {
                   </div>
                   <div style={{ fontSize: 13, color: V.textMuted }}>Player event telemetry from embedded players and vimeo.com views</div>
                 </div>
-                <div style={{ background: V.tableHeaderBg, border: `1px solid ${V.border}`, borderRadius: 6, padding: "6px 12px", fontSize: 13, color: V.textMid, cursor: "pointer" }}>
-                  All time ▾
-                </div>
+                <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
               </div>
 
               <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
-              {activeTab === "overview" && <OverviewTab />}
+              {activeTab === "overview" && <OverviewTab dateParams={dateParams} />}
 
               {activeTab === "videos" && (
                 selectedVideo
                   ? <VideoDetail video={selectedVideo} onBack={() => setSelectedVideo(null)} onSelectSession={(s) => { setSelectedVideo(null); setActiveTab("sessions"); setSelectedSession(s); }} />
-                  : <VideoTable onSelect={setSelectedVideo} />
+                  : <VideoTable onSelect={setSelectedVideo} dateParams={dateParams} />
               )}
 
               {activeTab === "sessions" && (
                 selectedSession
                   ? <SessionDetail session={selectedSession} onBack={() => setSelectedSession(null)} />
-                  : <SessionList onSelect={setSelectedSession} />
+                  : <SessionList onSelect={setSelectedSession} dateParams={dateParams} />
               )}
 
               {activeTab === "viewers" && (
                 selectedViewer
                   ? <ViewerDetail viewer={selectedViewer} onBack={() => setSelectedViewer(null)} onSelectSession={(s) => { setSelectedViewer(null); setActiveTab("sessions"); setSelectedSession(s); }} />
-                  : <ViewerList onSelect={setSelectedViewer} />
+                  : <ViewerList onSelect={setSelectedViewer} dateParams={dateParams} />
               )}
 
               {activeTab === "live-events" && (
