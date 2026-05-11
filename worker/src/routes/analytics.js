@@ -9,6 +9,11 @@ import {
   getViewerDetailSql,
 } from '../queries/viewers.js';
 import { listVideosSql } from '../queries/videos.js';
+import {
+  getSummarySql,
+  getDailySql,
+  getQualityDistributionSql,
+} from '../queries/overview.js';
 import { run, runMany } from '../queries/_execute.js';
 
 export async function handleAnalytics(path, params, sql) {
@@ -72,90 +77,10 @@ function dateFilter(params) {
 
 async function handleSummary(params, sql) {
   const { from, to } = dateFilter(params);
+  const filters = {};
+  if (from && to) filters.dateRange = { from, to };
 
-  let dateClause = '';
-  const args = [];
-
-  // Build date-filtered queries using tagged template approach
-  // Since neon tagged templates don't support dynamic WHERE easily,
-  // we run separate queries depending on whether filters are present.
-
-  if (from && to) {
-    const rows = await sql`
-      SELECT
-        COUNT(*)::int AS total_views,
-        COUNT(DISTINCT COALESCE(viewer_id, fingerprint_id))::int AS unique_viewers,
-        COALESCE(ROUND((SUM(GREATEST(percent_watched, 0) / 100.0 * COALESCE(
-          (SELECT duration FROM videos v WHERE v.video_id = s.video_id), 0
-        )) / 60.0)::numeric, 1), 0) AS total_watch_mins,
-        COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_percent_watched
-      FROM sessions s
-      WHERE s.started_at >= ${from} AND s.started_at <= ${to}
-    `;
-
-    const deep = await sql`
-      SELECT
-        COALESCE(LEAST(ROUND(
-          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::numeric * 100.0 /
-          NULLIF(COUNT(DISTINCT session_id), 0), 1
-        ), 100), 0) AS caption_adoption,
-        COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events,
-        COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes
-      FROM events
-      WHERE timestamp >= ${from} AND timestamp <= ${to}
-    `;
-
-    const bufferResult = await sql`
-      SELECT COALESCE(ROUND(
-        COUNT(*)::numeric * 100.0 / NULLIF((SELECT COUNT(*) FROM sessions WHERE started_at >= ${from} AND started_at <= ${to}), 0), 1
-      ), 0) AS buffer_rate
-      FROM (
-        SELECT session_id
-        FROM events
-        WHERE event_type = 'bufferend' AND timestamp >= ${from} AND timestamp <= ${to}
-        GROUP BY session_id
-        HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
-      ) high_buffer
-    `;
-
-    return json({ ...rows[0], ...deep[0], buffer_rate: bufferResult[0]?.buffer_rate ?? 0 });
-  }
-
-  // No date filter
-  const rows = await sql`
-    SELECT
-      COUNT(*)::int AS total_views,
-      COUNT(DISTINCT COALESCE(viewer_id, fingerprint_id))::int AS unique_viewers,
-      COALESCE(ROUND((SUM(GREATEST(percent_watched, 0) / 100.0 * COALESCE(
-        (SELECT duration FROM videos v WHERE v.video_id = s.video_id), 0
-      )) / 60.0)::numeric, 1), 0) AS total_watch_mins,
-      COALESCE(ROUND(AVG(percent_watched)::numeric, 1), 0) AS avg_percent_watched
-    FROM sessions s
-  `;
-
-  const deep = await sql`
-    SELECT
-      COALESCE(LEAST(ROUND(
-        COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::numeric * 100.0 /
-        NULLIF(COUNT(DISTINCT session_id), 0), 1
-      ), 100), 0) AS caption_adoption,
-      COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events,
-      COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes
-    FROM events
-  `;
-
-  const bufferResult = await sql`
-    SELECT COALESCE(ROUND(
-      COUNT(*)::numeric * 100.0 / NULLIF((SELECT COUNT(*) FROM sessions), 0), 1
-    ), 0) AS buffer_rate
-    FROM (
-      SELECT session_id
-      FROM events
-      WHERE event_type = 'bufferend'
-      GROUP BY session_id
-      HAVING SUM(COALESCE((payload->>'bufferDuration')::float, 0)) / NULLIF(MAX(video_duration), 0) > 0.03
-    ) high_buffer
-  `;
+  const [rows, deep, bufferResult] = await runMany(sql, getSummarySql(filters));
 
   return json({ ...rows[0], ...deep[0], buffer_rate: bufferResult[0]?.buffer_rate ?? 0 });
 }
@@ -166,60 +91,10 @@ async function handleSummary(params, sql) {
 
 async function handleDaily(params, sql) {
   const { from, to } = dateFilter(params);
+  const filters = {};
+  if (from && to) filters.dateRange = { from, to };
 
-  let rows;
-  if (from && to) {
-    rows = await sql`
-      WITH daily_sessions AS (
-        SELECT DATE(started_at) AS date, COUNT(*)::int AS sessions
-        FROM sessions
-        WHERE started_at >= ${from} AND started_at <= ${to}
-        GROUP BY DATE(started_at)
-      ),
-      daily_events AS (
-        SELECT
-          DATE(timestamp) AS date,
-          COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seeks,
-          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_sessions
-        FROM events
-        WHERE timestamp >= ${from} AND timestamp <= ${to}
-        GROUP BY DATE(timestamp)
-      )
-      SELECT
-        ds.date,
-        ds.sessions,
-        COALESCE(de.seeks, 0) AS seeks,
-        COALESCE(de.caption_sessions, 0) AS caption_sessions
-      FROM daily_sessions ds
-      LEFT JOIN daily_events de ON de.date = ds.date
-      ORDER BY ds.date ASC
-    `;
-  } else {
-    rows = await sql`
-      WITH daily_sessions AS (
-        SELECT DATE(started_at) AS date, COUNT(*)::int AS sessions
-        FROM sessions
-        GROUP BY DATE(started_at)
-      ),
-      daily_events AS (
-        SELECT
-          DATE(timestamp) AS date,
-          COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seeks,
-          COUNT(DISTINCT session_id) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_sessions
-        FROM events
-        GROUP BY DATE(timestamp)
-      )
-      SELECT
-        ds.date,
-        ds.sessions,
-        COALESCE(de.seeks, 0) AS seeks,
-        COALESCE(de.caption_sessions, 0) AS caption_sessions
-      FROM daily_sessions ds
-      LEFT JOIN daily_events de ON de.date = ds.date
-      ORDER BY ds.date ASC
-    `;
-  }
-
+  const rows = await run(sql, getDailySql(filters));
   return json(rows);
 }
 
@@ -376,33 +251,10 @@ async function handleHotspots(videoId, sql) {
 
 async function handleQuality(params, sql) {
   const videoId = params.get('videoId');
+  const filters = {};
+  if (videoId) filters.videoId = videoId;
 
-  let rows;
-  if (videoId) {
-    rows = await sql`
-      SELECT
-        payload->>'quality' AS quality,
-        COUNT(*)::int AS count
-      FROM events
-      WHERE event_type = 'qualitychange'
-        AND payload->>'quality' IS NOT NULL
-        AND video_id = ${videoId}
-      GROUP BY payload->>'quality'
-      ORDER BY count DESC
-    `;
-  } else {
-    rows = await sql`
-      SELECT
-        payload->>'quality' AS quality,
-        COUNT(*)::int AS count
-      FROM events
-      WHERE event_type = 'qualitychange'
-        AND payload->>'quality' IS NOT NULL
-      GROUP BY payload->>'quality'
-      ORDER BY count DESC
-    `;
-  }
-
+  const rows = await run(sql, getQualityDistributionSql(filters));
   return json(rows);
 }
 
