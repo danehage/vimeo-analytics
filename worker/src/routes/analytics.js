@@ -1,3 +1,10 @@
+import {
+  listSessionsSql,
+  countSessionsSql,
+  getSessionDetailSql,
+} from '../queries/sessions.js';
+import { run, runMany } from '../queries/_execute.js';
+
 export async function handleAnalytics(path, params, sql) {
   // Route matching
   const retentionMatch = path.match(/^\/api\/analytics\/retention\/(.+)$/);
@@ -506,115 +513,14 @@ async function handleSessions(params, sql) {
   const limit = parseInt(params.get('limit') || '50', 10);
   const offset = (page - 1) * limit;
 
-  let rows;
-  let countResult;
+  const filters = { limit, offset };
+  if (videoId) filters.videoId = videoId;
+  if (from && to) filters.dateRange = { from, to };
 
-  if (videoId && from && to) {
-    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE video_id = ${videoId} AND started_at >= ${from} AND started_at <= ${to}`;
-    rows = await sql`
-      SELECT
-        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
-        s.started_at, s.ended_at, s.percent_watched, s.completed,
-        s.identified_at, s.identified_via,
-        v.title AS video_title, v.duration AS video_duration,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-      FROM sessions s
-      LEFT JOIN videos v ON v.video_id = s.video_id
-      WHERE s.video_id = ${videoId} AND s.started_at >= ${from} AND s.started_at <= ${to}
-      ORDER BY s.started_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-  } else if (videoId) {
-    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE video_id = ${videoId}`;
-    rows = await sql`
-      WITH session_page AS (
-        SELECT session_id, video_id, viewer_id, fingerprint_id, embed_url,
-               started_at, ended_at, percent_watched, completed,
-               identified_at, identified_via
-        FROM sessions
-        WHERE video_id = ${videoId}
-        ORDER BY started_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      ),
-      event_counts AS (
-        SELECT
-          e.session_id,
-          COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
-          COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
-          COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
-        FROM events e
-        INNER JOIN session_page sp ON sp.session_id = e.session_id
-        WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
-        GROUP BY e.session_id
-      )
-      SELECT
-        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
-        s.started_at, s.ended_at, s.percent_watched, s.completed,
-        s.identified_at, s.identified_via,
-        v.title AS video_title, v.duration AS video_duration,
-        COALESCE(ec.caption_events, 0) AS caption_events,
-        COALESCE(ec.seek_events, 0) AS seek_events,
-        COALESCE(ec.buffer_events, 0) AS buffer_events
-      FROM session_page s
-      LEFT JOIN videos v ON v.video_id = s.video_id
-      LEFT JOIN event_counts ec ON ec.session_id = s.session_id
-      ORDER BY s.started_at DESC
-    `;
-  } else if (from && to) {
-    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions WHERE started_at >= ${from} AND started_at <= ${to}`;
-    rows = await sql`
-      SELECT
-        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
-        s.started_at, s.ended_at, s.percent_watched, s.completed,
-        s.identified_at, s.identified_via,
-        v.title AS video_title, v.duration AS video_duration,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'texttrackchange')::int AS caption_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'seeked')::int AS seek_events,
-        (SELECT COUNT(*) FROM events e WHERE e.session_id = s.session_id AND e.event_type = 'bufferstart')::int AS buffer_events
-      FROM sessions s
-      LEFT JOIN videos v ON v.video_id = s.video_id
-      WHERE s.started_at >= ${from} AND s.started_at <= ${to}
-      ORDER BY s.started_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-  } else {
-    countResult = await sql`SELECT COUNT(*)::int AS total FROM sessions`;
-    rows = await sql`
-      WITH session_page AS (
-        SELECT session_id, video_id, viewer_id, fingerprint_id, embed_url,
-               started_at, ended_at, percent_watched, completed,
-               identified_at, identified_via
-        FROM sessions
-        ORDER BY started_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      ),
-      event_counts AS (
-        SELECT
-          e.session_id,
-          COUNT(*) FILTER (WHERE e.event_type = 'texttrackchange')::int AS caption_events,
-          COUNT(*) FILTER (WHERE e.event_type = 'seeked')::int AS seek_events,
-          COUNT(*) FILTER (WHERE e.event_type = 'bufferstart')::int AS buffer_events
-        FROM events e
-        INNER JOIN session_page sp ON sp.session_id = e.session_id
-        WHERE e.event_type IN ('texttrackchange', 'seeked', 'bufferstart')
-        GROUP BY e.session_id
-      )
-      SELECT
-        s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
-        s.started_at, s.ended_at, s.percent_watched, s.completed,
-        s.identified_at, s.identified_via,
-        v.title AS video_title, v.duration AS video_duration,
-        COALESCE(ec.caption_events, 0) AS caption_events,
-        COALESCE(ec.seek_events, 0) AS seek_events,
-        COALESCE(ec.buffer_events, 0) AS buffer_events
-      FROM session_page s
-      LEFT JOIN videos v ON v.video_id = s.video_id
-      LEFT JOIN event_counts ec ON ec.session_id = s.session_id
-      ORDER BY s.started_at DESC
-    `;
-  }
+  const [rows, countResult] = await runMany(sql, [
+    listSessionsSql(filters),
+    countSessionsSql(filters),
+  ]);
 
   return json({
     sessions: rows,
@@ -629,27 +535,11 @@ async function handleSessions(params, sql) {
 // ---------------------------------------------------------------------------
 
 async function handleSessionDetail(sessionId, sql) {
-  const sessionRows = await sql`
-    SELECT
-      s.session_id, s.video_id, s.viewer_id, s.fingerprint_id, s.embed_url,
-      s.started_at, s.ended_at, s.percent_watched, s.completed,
-      s.identified_at, s.identified_via,
-      v.title AS video_title, v.duration AS video_duration
-    FROM sessions s
-    LEFT JOIN videos v ON v.video_id = s.video_id
-    WHERE s.session_id = ${sessionId}
-  `;
+  const [sessionRows, events] = await runMany(sql, getSessionDetailSql(sessionId));
 
   if (sessionRows.length === 0) {
     return json({ error: 'Session not found' }, 404);
   }
-
-  const events = await sql`
-    SELECT event_id, event_type, playhead, timestamp, video_duration, payload
-    FROM events
-    WHERE session_id = ${sessionId}
-    ORDER BY timestamp ASC
-  `;
 
   return json({
     session: sessionRows[0],
