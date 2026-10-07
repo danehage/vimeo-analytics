@@ -4,6 +4,7 @@ import { V, fmtSecs } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 import EnterpriseStatCard from '../shared/EnterpriseStatCard';
 import SectionHeader from '../shared/SectionHeader';
+import { isLiveSession } from '../../utils/sessions';
 
 function timeAgo(ts) {
   const diff = (Date.now() - new Date(ts).getTime()) / 1000;
@@ -232,9 +233,9 @@ function LiveEventDetail({ videoId, event, onBack, onSelectSession }) {
   const video = data?.video || event;
   const activeViewers = data?.active_viewers || [];
   const sessions = (data?.sessions || []).map(s => ({
-    id: s.session_id?.slice(0, 6) || '—',
+    id: s.session_id?.slice(0, 8) || '—',
     session_id: s.session_id,
-    shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
+    shortId: '#' + (s.session_id?.slice(0, 8) || '—'),
     video: s.video_title || s.video_id,
     videoId: s.video_id,
     viewerId: s.viewer_id || null,
@@ -249,7 +250,7 @@ function LiveEventDetail({ videoId, event, onBack, onSelectSession }) {
     captionsEnabled: (s.caption_events || 0) > 0,
     seeks: s.seek_events || 0,
     buffers: s.buffer_events || 0,
-    isLive: s.embed_url?.includes('vidharbor.com'),
+    isLive: isLiveSession(s.session_id),
   }));
 
   const isActive = video.is_active;

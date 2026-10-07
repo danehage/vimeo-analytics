@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { V, fmtSecs } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 import ErrorMessage from '../shared/ErrorMessage';
+import { isLiveSession } from '../../utils/sessions';
 
 export default function SessionList({ onSelect, dateParams = '' }) {
   const [filterVideo, setFilterVideo] = useState("all");
@@ -11,9 +12,9 @@ export default function SessionList({ onSelect, dateParams = '' }) {
   const { data, loading, error, refetch } = usePolling(sessionsPath);
 
   const sessions = (data?.sessions || []).map(s => ({
-    id: s.session_id?.slice(0, 6) || '—',
+    id: s.session_id?.slice(0, 8) || '—',
     session_id: s.session_id,
-    shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
+    shortId: '#' + (s.session_id?.slice(0, 8) || '—'),
     video: s.video_title || s.video_id,
     videoId: s.video_id,
     viewerId: s.viewer_id || null,
@@ -29,7 +30,7 @@ export default function SessionList({ onSelect, dateParams = '' }) {
     qualityChanges: 0,
     seeks: s.seek_events || 0,
     buffers: s.buffer_events || 0,
-    isLive: s.embed_url?.includes('vidharbor.com'),
+    isLive: isLiveSession(s.session_id),
   }));
 
   // Build filter options dynamically from data

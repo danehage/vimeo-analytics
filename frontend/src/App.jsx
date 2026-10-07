@@ -67,13 +67,13 @@ export default function App() {
     ? `from=${dateRange.from}&to=${dateRange.to}`
     : '';
   const [selectedSession, setSelectedSession] = useState(
-    initial.sessionId ? { session_id: initial.sessionId, shortId: '#' + initial.sessionId.slice(0, 6) } : null
+    initial.sessionId ? { session_id: initial.sessionId, shortId: '#' + initial.sessionId.slice(0, 8) } : null
   );
   const [selectedViewer, setSelectedViewer] = useState(
     initial.viewerFp ? { fingerprintId: initial.viewerFp, status: "unknown" } : null
   );
   const [selectedVideo, setSelectedVideo] = useState(
-    initial.videoId ? { video_id: initial.videoId } : null
+    initial.videoId ? { videoId: initial.videoId } : null
   );
 
   // Suppress pushState when handling popstate
@@ -91,7 +91,7 @@ export default function App() {
       activeTab,
       selectedSession?.session_id || null,
       selectedViewer?.fingerprintId || null,
-      selectedVideo?.video_id || null,
+      selectedVideo?.videoId || null,
     );
     if (window.location.hash !== newHash) {
       if (isInitial.current) {
@@ -111,13 +111,13 @@ export default function App() {
       setActiveNav(state.nav);
       setActiveTab(state.tab);
       setSelectedSession(
-        state.sessionId ? { session_id: state.sessionId, shortId: '#' + state.sessionId.slice(0, 6) } : null
+        state.sessionId ? { session_id: state.sessionId, shortId: '#' + state.sessionId.slice(0, 8) } : null
       );
       setSelectedViewer(
         state.viewerFp ? { fingerprintId: state.viewerFp, status: "unknown" } : null
       );
       setSelectedVideo(
-        state.videoId ? { video_id: state.videoId } : null
+        state.videoId ? { videoId: state.videoId } : null
       );
     };
     window.addEventListener("popstate", onPop);
@@ -178,9 +178,12 @@ export default function App() {
                     <h1 style={{ fontSize: 28, fontWeight: 700, color: V.text, margin: 0 }}>Deep Analytics</h1>
                     <span style={{ background: V.teal, color: "#0e1216", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 4, letterSpacing: 0.5 }}>ENTERPRISE</span>
                   </div>
-                  <div style={{ fontSize: 13, color: V.textMuted }}>Player event telemetry from embedded players and vimeo.com views</div>
+                  <div style={{ fontSize: 13, color: V.textMuted }}>Player event telemetry from embedded players on your sites</div>
                 </div>
-                <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+                {/* Engagement and Live Events queries aren't date-filtered yet */}
+                {!["engagement", "live-events"].includes(activeTab) && (
+                  <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+                )}
               </div>
 
               <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
@@ -220,7 +223,7 @@ export default function App() {
               )}
 
               <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${V.border}`, display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: V.textLight }}>Player event data via Vimeo's embedded tracking · vimeo.com views included for opted-in accounts</span>
+                <span style={{ fontSize: 11, color: V.textLight }}>Player event data from embeds on pages with the collector installed · vimeo.com views not included in this preview</span>
                 <span style={{ fontSize: 11, color: V.teal, cursor: "pointer", fontWeight: 500 }}>Export raw event data →</span>
               </div>
             </div>

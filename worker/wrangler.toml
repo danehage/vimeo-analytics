@@ -2,5 +2,10 @@ name = "vimeo-analytics"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
+[[rules]]
+type = "Text"
+globs = ["**/collector/collector.js"]
+fallthrough = false
+
 [vars]
-CORS_ORIGINS = "https://vidharbor.com,https://www.vidharbor.com,https://analytics.danecast.net,https://vimeo-deep-analytics.pages.dev,http://localhost:5173"
+CORS_ORIGINS = "https://vidharbor.page,https://www.vidharbor.page,https://vidharbor.com,https://www.vidharbor.com,https://analytics.danecast.net,https://vimeo-deep-analytics.pages.dev,http://localhost:5173"

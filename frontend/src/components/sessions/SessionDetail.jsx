@@ -2,6 +2,7 @@ import { V, fmtSecs, EVENT_COLORS } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
 import SessionScrubber from './SessionScrubber';
 import { usePolling } from '../../hooks/usePolling';
+import { isLiveSession } from '../../utils/sessions';
 
 const EVENT_ICONS = {
   play: "▶", pause: "⏸", ended: "✓", seeked: "⏭",
@@ -95,7 +96,7 @@ export default function SessionDetail({ session, onBack }) {
               ) : (
                 <span style={{ background: V.amberLight, color: V.amber, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 4 }}>{Math.round(watchedPct)}% watched</span>
               )}
-              {session.isLive && (
+              {isLiveSession(session.session_id) && (
                 <span style={{ background: V.greenLight, color: V.green, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4 }}>live</span>
               )}
             </div>
@@ -143,7 +144,7 @@ export default function SessionDetail({ session, onBack }) {
       </div>
 
       {/* Scrubber */}
-      {events.length > 0 && (
+      {events.length > 0 && duration > 0 && (
         <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px", marginBottom: 16 }}>
           <SectionHeader title="Watch map" sub="Visual reconstruction of what was watched, skipped, and rewound" />
           <SessionScrubber session={scrubberSession} />

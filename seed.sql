@@ -24,14 +24,14 @@ INSERT INTO viewers (fingerprint_id, viewer_id, identified_at, identified_via, f
 
 -- j.smith@corp.com (fp_a3c8e1) — 8 sessions
 INSERT INTO sessions (session_id, video_id, viewer_id, fingerprint_id, embed_url, started_at, ended_at, percent_watched, completed, identified_at, identified_via) VALUES
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding',   '2026-02-10T09:05:00Z', '2026-02-10T09:18:00Z', 92,  TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits',     '2026-02-10T10:00:00Z', '2026-02-10T10:08:00Z', 78,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding',   '2026-02-10T09:05:00Z', '2026-02-10T09:18:00Z', 92,  TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits',     '2026-02-10T10:00:00Z', '2026-02-10T10:08:00Z', 78,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
   ('a3f9b2e1-3333-4aaa-b333-000000000003', 'v_sec_train_3',   'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security',     '2026-02-11T14:00:00Z', '2026-02-11T14:19:00Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace',  'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws',        '2026-02-15T11:30:00Z', '2026-02-15T11:32:00Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence',      'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence',    '2026-02-18T16:00:00Z', '2026-02-18T16:00:15Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall',     '2026-02-28T16:00:00Z', '2026-02-28T16:42:00Z', 88,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3',   'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security',     '2026-03-03T09:00:00Z', '2026-03-03T09:12:00Z', 55,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding',   '2026-03-04T14:00:00Z', '2026-03-04T14:22:00Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login');
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace',  'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws',        '2026-02-15T11:30:00Z', '2026-02-15T11:32:00Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence',      'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence',    '2026-02-18T16:00:00Z', '2026-02-18T16:00:15Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall',     '2026-02-28T16:00:00Z', '2026-02-28T16:42:00Z', 88,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3',   'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security',     '2026-03-03T09:00:00Z', '2026-03-03T09:12:00Z', 55,  FALSE, '2026-02-12T10:30:00Z', 'SSO login'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult',  'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding',   '2026-03-04T14:00:00Z', '2026-03-04T14:22:00Z', 100, TRUE,  '2026-02-12T10:30:00Z', 'SSO login');
 
 -- fp_b7d2f9 (anonymous) — 5 sessions
 INSERT INTO sessions (session_id, video_id, viewer_id, fingerprint_id, embed_url, started_at, ended_at, percent_watched, completed, identified_at, identified_via) VALUES
@@ -81,15 +81,15 @@ INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, 
   ('a3f9b2e1-3333-4aaa-b333-000000000003', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'session_end',     1102, '2026-02-11T14:19:01Z', 1102, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-4444 (j.smith, AWS Marketplace, quick full watch)
+-- EVENTS — Session e27c6b93-4444 (j.smith, AWS Marketplace, quick full watch)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'play',        0,  '2026-02-15T11:30:00Z', 83, '{"seconds":0,"duration":83,"percent":0}'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  5,  '2026-02-15T11:30:05Z', 83, '{"seconds":5,"duration":83,"percent":6.02}'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  30, '2026-02-15T11:30:30Z', 83, '{"seconds":30,"duration":83,"percent":36.14}'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  60, '2026-02-15T11:31:00Z', 83, '{"seconds":60,"duration":83,"percent":72.29}'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'ended',       83, '2026-02-15T11:31:23Z', 83, '{"seconds":83,"duration":83,"percent":100}'),
-  ('a3f9b2e1-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'session_end', 83, '2026-02-15T11:31:24Z', 83, '{}');
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'play',        0,  '2026-02-15T11:30:00Z', 83, '{"seconds":0,"duration":83,"percent":0}'),
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  5,  '2026-02-15T11:30:05Z', 83, '{"seconds":5,"duration":83,"percent":6.02}'),
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  30, '2026-02-15T11:30:30Z', 83, '{"seconds":30,"duration":83,"percent":36.14}'),
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'timeupdate',  60, '2026-02-15T11:31:00Z', 83, '{"seconds":60,"duration":83,"percent":72.29}'),
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'ended',       83, '2026-02-15T11:31:23Z', 83, '{"seconds":83,"duration":83,"percent":100}'),
+  ('e27c6b93-4444-4aaa-b444-000000000004', 'v_aws_mktplace', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/aws', 'session_end', 83, '2026-02-15T11:31:24Z', 83, '{}');
 
 -- ============================================================
 -- EVENTS — Session c82e41a0-1111 (fp_b7d2f9, Security Training attempt 1 — abandoned at 32%)
@@ -223,34 +223,34 @@ INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, 
   ('e9c2d4a1-3333-4ddd-a333-000000000003', 'v_onboard_cult', NULL, 'fp_d9f3b8', 'https://intranet.corp.com/onboarding', 'session_end', 288, '2026-03-02T10:30:00Z', 720, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-1111 (j.smith, Onboarding, 92% watch)
+-- EVENTS — Session 5d1e7c40-1111 (j.smith, Onboarding, 92% watch)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'play',        0,   '2026-02-10T09:05:00Z', 720, '{"seconds":0,"duration":720,"percent":0}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  60,  '2026-02-10T09:06:00Z', 720, '{"seconds":60,"duration":720,"percent":8.33}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  180, '2026-02-10T09:08:00Z', 720, '{"seconds":180,"duration":720,"percent":25}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  360, '2026-02-10T09:11:00Z', 720, '{"seconds":360,"duration":720,"percent":50}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  540, '2026-02-10T09:14:00Z', 720, '{"seconds":540,"duration":720,"percent":75}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  660, '2026-02-10T09:16:00Z', 720, '{"seconds":660,"duration":720,"percent":91.67}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'pause',       662, '2026-02-10T09:17:00Z', 720, '{"seconds":662,"duration":720,"percent":91.94}'),
-  ('a3f9b2e1-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'session_end', 662, '2026-02-10T09:18:00Z', 720, '{}');
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'play',        0,   '2026-02-10T09:05:00Z', 720, '{"seconds":0,"duration":720,"percent":0}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  60,  '2026-02-10T09:06:00Z', 720, '{"seconds":60,"duration":720,"percent":8.33}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  180, '2026-02-10T09:08:00Z', 720, '{"seconds":180,"duration":720,"percent":25}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  360, '2026-02-10T09:11:00Z', 720, '{"seconds":360,"duration":720,"percent":50}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  540, '2026-02-10T09:14:00Z', 720, '{"seconds":540,"duration":720,"percent":75}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',  660, '2026-02-10T09:16:00Z', 720, '{"seconds":660,"duration":720,"percent":91.67}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'pause',       662, '2026-02-10T09:17:00Z', 720, '{"seconds":662,"duration":720,"percent":91.94}'),
+  ('5d1e7c40-1111-4aaa-b111-000000000001', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'session_end', 662, '2026-02-10T09:18:00Z', 720, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-6666 (j.smith, CEO Town Hall, 88%)
+-- EVENTS — Session c4b93e27-6666 (j.smith, CEO Town Hall, 88%)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'play',            0,    '2026-02-28T16:00:00Z', 2400, '{"seconds":0,"duration":2400,"percent":0}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      300,  '2026-02-28T16:05:00Z', 2400, '{"seconds":300,"duration":2400,"percent":12.5}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      600,  '2026-02-28T16:10:00Z', 2400, '{"seconds":600,"duration":2400,"percent":25}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'seeked',          1000, '2026-02-28T16:15:00Z', 2400, '{"seconds":1000,"duration":2400,"percent":41.67}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1200, '2026-02-28T16:20:00Z', 2400, '{"seconds":1200,"duration":2400,"percent":50}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1500, '2026-02-28T16:25:00Z', 2400, '{"seconds":1500,"duration":2400,"percent":62.5}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1800, '2026-02-28T16:30:00Z', 2400, '{"seconds":1800,"duration":2400,"percent":75}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'bufferstart',     1850, '2026-02-28T16:31:00Z', 2400, '{"seconds":1850}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'bufferend',       1850, '2026-02-28T16:31:04Z', 2400, '{"seconds":1850,"bufferDuration":4.2}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      2100, '2026-02-28T16:38:00Z', 2400, '{"seconds":2100,"duration":2400,"percent":87.5}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'pause',           2112, '2026-02-28T16:42:00Z', 2400, '{"seconds":2112,"duration":2400,"percent":88}'),
-  ('a3f9b2e1-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'session_end',     2112, '2026-02-28T16:42:01Z', 2400, '{}');
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'play',            0,    '2026-02-28T16:00:00Z', 2400, '{"seconds":0,"duration":2400,"percent":0}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      300,  '2026-02-28T16:05:00Z', 2400, '{"seconds":300,"duration":2400,"percent":12.5}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      600,  '2026-02-28T16:10:00Z', 2400, '{"seconds":600,"duration":2400,"percent":25}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'seeked',          1000, '2026-02-28T16:15:00Z', 2400, '{"seconds":1000,"duration":2400,"percent":41.67}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1200, '2026-02-28T16:20:00Z', 2400, '{"seconds":1200,"duration":2400,"percent":50}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1500, '2026-02-28T16:25:00Z', 2400, '{"seconds":1500,"duration":2400,"percent":62.5}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      1800, '2026-02-28T16:30:00Z', 2400, '{"seconds":1800,"duration":2400,"percent":75}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'bufferstart',     1850, '2026-02-28T16:31:00Z', 2400, '{"seconds":1850}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'bufferend',       1850, '2026-02-28T16:31:04Z', 2400, '{"seconds":1850,"bufferDuration":4.2}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'timeupdate',      2100, '2026-02-28T16:38:00Z', 2400, '{"seconds":2100,"duration":2400,"percent":87.5}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'pause',           2112, '2026-02-28T16:42:00Z', 2400, '{"seconds":2112,"duration":2400,"percent":88}'),
+  ('c4b93e27-6666-4aaa-b666-000000000006', 'v_ceo_townhall', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/townhall', 'session_end',     2112, '2026-02-28T16:42:01Z', 2400, '{}');
 
 -- ============================================================
 -- EVENTS — Session c82e41a0-3333 (fp_b7d2f9, Onboarding, 68%)
@@ -278,16 +278,16 @@ INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, 
   ('c82e41a0-4444-4bbb-a444-000000000004', 'v_benefits_2026', NULL, 'fp_b7d2f9', 'https://intranet.corp.com/benefits', 'session_end', 297, '2026-02-25T10:07:01Z', 540, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-2222 (j.smith, Benefits, 78%)
+-- EVENTS — Session 9b4a2f18-2222 (j.smith, Benefits, 78%)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'play',        0,   '2026-02-10T10:00:00Z', 540, '{"seconds":0,"duration":540,"percent":0}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  60,  '2026-02-10T10:01:00Z', 540, '{"seconds":60,"duration":540,"percent":11.11}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  180, '2026-02-10T10:03:00Z', 540, '{"seconds":180,"duration":540,"percent":33.33}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  300, '2026-02-10T10:05:00Z', 540, '{"seconds":300,"duration":540,"percent":55.56}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  420, '2026-02-10T10:07:00Z', 540, '{"seconds":420,"duration":540,"percent":77.78}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'pause',       421, '2026-02-10T10:08:00Z', 540, '{"seconds":421,"duration":540,"percent":77.96}'),
-  ('a3f9b2e1-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'session_end', 421, '2026-02-10T10:08:01Z', 540, '{}');
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'play',        0,   '2026-02-10T10:00:00Z', 540, '{"seconds":0,"duration":540,"percent":0}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  60,  '2026-02-10T10:01:00Z', 540, '{"seconds":60,"duration":540,"percent":11.11}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  180, '2026-02-10T10:03:00Z', 540, '{"seconds":180,"duration":540,"percent":33.33}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  300, '2026-02-10T10:05:00Z', 540, '{"seconds":300,"duration":540,"percent":55.56}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'timeupdate',  420, '2026-02-10T10:07:00Z', 540, '{"seconds":420,"duration":540,"percent":77.78}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'pause',       421, '2026-02-10T10:08:00Z', 540, '{"seconds":421,"duration":540,"percent":77.96}'),
+  ('9b4a2f18-2222-4aaa-b222-000000000002', 'v_benefits_2026', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/benefits', 'session_end', 421, '2026-02-10T10:08:01Z', 540, '{}');
 
 -- ============================================================
 -- EVENTS — Session d5a7f3b2-2222 (m.chen, Benefits, full watch)
@@ -322,43 +322,43 @@ INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, 
   ('d5a7f3b2-6666-4ccc-a666-000000000006', 'v_florence', 'm.chen@corp.com', 'fp_c1e5a3', 'https://vidharbor.com/demos/florence', 'session_end', 15, '2026-03-04T11:10:00Z', 15, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-5555 (j.smith, Florence, quick watch)
+-- EVENTS — Session 71f0d8a5-5555 (j.smith, Florence, quick watch)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'play',        0,  '2026-02-18T16:00:00Z', 15, '{"seconds":0,"duration":15,"percent":0}'),
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'timeupdate',  5,  '2026-02-18T16:00:05Z', 15, '{"seconds":5,"duration":15,"percent":33.33}'),
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'timeupdate',  10, '2026-02-18T16:00:10Z', 15, '{"seconds":10,"duration":15,"percent":66.67}'),
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'ended',       15, '2026-02-18T16:00:15Z', 15, '{"seconds":15,"duration":15,"percent":100}'),
-  ('a3f9b2e1-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'session_end', 15, '2026-02-18T16:00:16Z', 15, '{}');
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'play',        0,  '2026-02-18T16:00:00Z', 15, '{"seconds":0,"duration":15,"percent":0}'),
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'timeupdate',  5,  '2026-02-18T16:00:05Z', 15, '{"seconds":5,"duration":15,"percent":33.33}'),
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'timeupdate',  10, '2026-02-18T16:00:10Z', 15, '{"seconds":10,"duration":15,"percent":66.67}'),
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'ended',       15, '2026-02-18T16:00:15Z', 15, '{"seconds":15,"duration":15,"percent":100}'),
+  ('71f0d8a5-5555-4aaa-b555-000000000005', 'v_florence', 'j.smith@corp.com', 'fp_a3c8e1', 'https://vidharbor.com/demos/florence', 'session_end', 15, '2026-02-18T16:00:16Z', 15, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-7777 (j.smith, Security Training rewatch, 55%)
+-- EVENTS — Session 2a8e5f61-7777 (j.smith, Security Training rewatch, 55%)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'play',            0,   '2026-03-03T09:00:00Z', 1102, '{"seconds":0,"duration":1102,"percent":0}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      60,  '2026-03-03T09:01:00Z', 1102, '{"seconds":60,"duration":1102,"percent":5.44}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'seeked',          300, '2026-03-03T09:03:00Z', 1102, '{"seconds":300,"duration":1102,"percent":27.22}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'texttrackchange', 305, '2026-03-03T09:03:05Z', 1102, '{"kind":"captions","label":"English","language":"en"}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      360, '2026-03-03T09:04:00Z', 1102, '{"seconds":360,"duration":1102,"percent":32.67}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      480, '2026-03-03T09:06:00Z', 1102, '{"seconds":480,"duration":1102,"percent":43.56}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'seeked',          200, '2026-03-03T09:07:00Z', 1102, '{"seconds":200,"duration":1102,"percent":18.15}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      300, '2026-03-03T09:09:00Z', 1102, '{"seconds":300,"duration":1102,"percent":27.22}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      480, '2026-03-03T09:11:00Z', 1102, '{"seconds":480,"duration":1102,"percent":43.56}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      600, '2026-03-03T09:12:00Z', 1102, '{"seconds":600,"duration":1102,"percent":54.45}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'pause',           606, '2026-03-03T09:12:06Z', 1102, '{"seconds":606,"duration":1102,"percent":54.99}'),
-  ('a3f9b2e1-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'session_end',     606, '2026-03-03T09:12:07Z', 1102, '{}');
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'play',            0,   '2026-03-03T09:00:00Z', 1102, '{"seconds":0,"duration":1102,"percent":0}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      60,  '2026-03-03T09:01:00Z', 1102, '{"seconds":60,"duration":1102,"percent":5.44}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'seeked',          300, '2026-03-03T09:03:00Z', 1102, '{"seconds":300,"duration":1102,"percent":27.22}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'texttrackchange', 305, '2026-03-03T09:03:05Z', 1102, '{"kind":"captions","label":"English","language":"en"}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      360, '2026-03-03T09:04:00Z', 1102, '{"seconds":360,"duration":1102,"percent":32.67}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      480, '2026-03-03T09:06:00Z', 1102, '{"seconds":480,"duration":1102,"percent":43.56}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'seeked',          200, '2026-03-03T09:07:00Z', 1102, '{"seconds":200,"duration":1102,"percent":18.15}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      300, '2026-03-03T09:09:00Z', 1102, '{"seconds":300,"duration":1102,"percent":27.22}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      480, '2026-03-03T09:11:00Z', 1102, '{"seconds":480,"duration":1102,"percent":43.56}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'timeupdate',      600, '2026-03-03T09:12:00Z', 1102, '{"seconds":600,"duration":1102,"percent":54.45}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'pause',           606, '2026-03-03T09:12:06Z', 1102, '{"seconds":606,"duration":1102,"percent":54.99}'),
+  ('2a8e5f61-7777-4aaa-b777-000000000007', 'v_sec_train_3', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/security', 'session_end',     606, '2026-03-03T09:12:07Z', 1102, '{}');
 
 -- ============================================================
--- EVENTS — Session a3f9b2e1-8888 (j.smith, Onboarding rewatch, 100%)
+-- EVENTS — Session f6d3a90c-8888 (j.smith, Onboarding rewatch, 100%)
 -- ============================================================
 INSERT INTO events (session_id, video_id, viewer_id, fingerprint_id, embed_url, event_type, playhead, timestamp, video_duration, payload) VALUES
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'play',            0,   '2026-03-04T14:00:00Z', 720, '{"seconds":0,"duration":720,"percent":0}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'texttrackchange', 10,  '2026-03-04T14:00:10Z', 720, '{"kind":"captions","label":"English","language":"en"}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      60,  '2026-03-04T14:01:00Z', 720, '{"seconds":60,"duration":720,"percent":8.33}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      180, '2026-03-04T14:03:00Z', 720, '{"seconds":180,"duration":720,"percent":25}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      360, '2026-03-04T14:06:00Z', 720, '{"seconds":360,"duration":720,"percent":50}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'qualitychange',   400, '2026-03-04T14:07:00Z', 720, '{"quality":"1080p"}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      540, '2026-03-04T14:09:00Z', 720, '{"seconds":540,"duration":720,"percent":75}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      660, '2026-03-04T14:18:00Z', 720, '{"seconds":660,"duration":720,"percent":91.67}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'ended',           720, '2026-03-04T14:21:00Z', 720, '{"seconds":720,"duration":720,"percent":100}'),
-  ('a3f9b2e1-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'session_end',     720, '2026-03-04T14:22:00Z', 720, '{}');
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'play',            0,   '2026-03-04T14:00:00Z', 720, '{"seconds":0,"duration":720,"percent":0}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'texttrackchange', 10,  '2026-03-04T14:00:10Z', 720, '{"kind":"captions","label":"English","language":"en"}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      60,  '2026-03-04T14:01:00Z', 720, '{"seconds":60,"duration":720,"percent":8.33}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      180, '2026-03-04T14:03:00Z', 720, '{"seconds":180,"duration":720,"percent":25}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      360, '2026-03-04T14:06:00Z', 720, '{"seconds":360,"duration":720,"percent":50}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'qualitychange',   400, '2026-03-04T14:07:00Z', 720, '{"quality":"1080p"}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      540, '2026-03-04T14:09:00Z', 720, '{"seconds":540,"duration":720,"percent":75}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'timeupdate',      660, '2026-03-04T14:18:00Z', 720, '{"seconds":660,"duration":720,"percent":91.67}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'ended',           720, '2026-03-04T14:21:00Z', 720, '{"seconds":720,"duration":720,"percent":100}'),
+  ('f6d3a90c-8888-4aaa-b888-000000000008', 'v_onboard_cult', 'j.smith@corp.com', 'fp_a3c8e1', 'https://intranet.corp.com/onboarding', 'session_end',     720, '2026-03-04T14:22:00Z', 720, '{}');

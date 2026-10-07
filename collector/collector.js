@@ -2,7 +2,9 @@
   'use strict';
 
   const CONFIG = window.VimeoAnalyticsConfig || {};
-  const ENDPOINT = CONFIG.endpoint || '/api/events';
+  // When served by the Worker at /collector.js, default to that Worker's ingest route
+  const SCRIPT_SRC = document.currentScript && document.currentScript.src;
+  const ENDPOINT = CONFIG.endpoint || (SCRIPT_SRC ? new URL('/api/events', SCRIPT_SRC).href : '/api/events');
   const IFRAME_SELECTOR = CONFIG.iframeSelector || 'iframe[src*="vimeo.com"]';
   const TIMEUPDATE_INTERVAL = 5; // seconds
 
@@ -46,6 +48,8 @@
   let isStillLive = !!CONFIG.isLive;
   let lastReportedDuration = 0;
   let stableDurationCount = 0;
+  let bufferStartedAt = null;
+  const pending = []; // events fired before getVideoId() resolves
 
   function getViewerId() {
     if (window.VimeoAnalyticsConfig?.viewerId) {
@@ -82,6 +86,14 @@
       payload: payload,
     };
 
+    if (!VIDEO_ID) {
+      pending.push(data);
+      return;
+    }
+    post(data);
+  }
+
+  function post(data) {
     // Use fetch for immediate delivery; sendBeacon is only used for beforeunload
     fetch(ENDPOINT, {
       method: 'POST',
@@ -104,6 +116,11 @@
   Promise.all([player.getVideoId(), player.getDuration()]).then(([id, dur]) => {
     VIDEO_ID = String(id);
     VIDEO_DURATION = dur;
+    pending.splice(0).forEach(data => {
+      data.video_id = VIDEO_ID;
+      data.video_duration = data.video_duration || VIDEO_DURATION;
+      post(data);
+    });
   });
 
   // Event listeners
@@ -158,23 +175,27 @@
   });
 
   player.on('volumechange', (data) => {
-    sendEvent('volumechange', { volume: data.volume });
+    sendEvent('volumechange', { volume: data.volume, muted: data.muted });
   });
 
   player.on('bufferstart', () => {
+    bufferStartedAt = performance.now();
     player.getCurrentTime().then(seconds => {
       sendEvent('bufferstart', { seconds });
     });
   });
 
   player.on('bufferend', () => {
+    const bufferDuration = bufferStartedAt == null ? 0 : (performance.now() - bufferStartedAt) / 1000;
+    bufferStartedAt = null;
     player.getCurrentTime().then(seconds => {
-      sendEvent('bufferend', { seconds });
+      sendEvent('bufferend', { seconds, bufferDuration: Math.round(bufferDuration * 100) / 100 });
     });
   });
 
   // Session end on page unload — use cached playhead to avoid async race condition
   window.addEventListener('beforeunload', () => {
+    if (!VIDEO_ID) return;
     const data = {
       event_id: crypto.randomUUID(),
       session_id: SESSION_ID,

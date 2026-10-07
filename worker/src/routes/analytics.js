@@ -69,9 +69,20 @@ function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status });
 }
 
-function dateFilter(params) {
-  const from = params.get('from');
-  const to = params.get('to');
+export function clampInt(value, fallback, min, max) {
+  const n = parseInt(value, 10);
+  return Number.isNaN(n) ? fallback : Math.min(Math.max(n, min), max);
+}
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Accepts YYYY-MM-DD or full ISO timestamps. A bare `to` date is inclusive
+// (end of that day), otherwise `started_at <= '2026-10-07'` drops today.
+export function dateFilter(params) {
+  const parse = (v) => (v && !Number.isNaN(Date.parse(v)) ? v : null);
+  const from = parse(params.get('from'));
+  let to = parse(params.get('to'));
+  if (to && DATE_ONLY.test(to)) to = `${to}T23:59:59.999Z`;
   return { from, to };
 }
 
@@ -269,8 +280,8 @@ async function handleQuality(params, sql) {
 async function handleSessions(params, sql) {
   const videoId = params.get('videoId');
   const { from, to } = dateFilter(params);
-  const page = parseInt(params.get('page') || '1', 10);
-  const limit = parseInt(params.get('limit') || '50', 10);
+  const page = clampInt(params.get('page'), 1, 1, 10000);
+  const limit = clampInt(params.get('limit'), 50, 1, 500);
   const offset = (page - 1) * limit;
 
   const filters = { limit, offset };

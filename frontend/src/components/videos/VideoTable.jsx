@@ -2,6 +2,19 @@ import { useState } from 'react';
 import { V } from '../../constants/theme';
 import { usePolling } from '../../hooks/usePolling';
 
+export const toVideoRow = (v) => ({
+  title: v.title || v.video_id,
+  videoId: v.video_id,
+  duration: v.duration ? `${Math.floor(v.duration / 60)}:${String(Math.floor(v.duration % 60)).padStart(2, '0')}` : '—',
+  views: v.views || 0,
+  uniqueViewers: v.unique_viewers || 0,
+  avgPct: Math.round(v.avg_percent_watched || 0),
+  finishes: v.finishes || 0,
+  captionPct: Math.round(v.caption_adoption || 0),
+  seekEvents: v.seek_events || 0,
+  bufferRate: Math.round((v.buffer_rate || 0) * 10) / 10,
+});
+
 export default function VideoTable({ onSelect, dateParams = '' }) {
   const [sortCol, setSortCol] = useState("views");
   const [sortDir, setSortDir] = useState("desc");
@@ -10,18 +23,7 @@ export default function VideoTable({ onSelect, dateParams = '' }) {
     : '/api/analytics/videos';
   const { data, loading } = usePolling(videosPath);
 
-  const videos = (data || []).map(v => ({
-    title: v.title || v.video_id,
-    videoId: v.video_id,
-    duration: v.duration ? `${Math.floor(v.duration / 60)}:${String(Math.floor(v.duration % 60)).padStart(2, '0')}` : '—',
-    views: v.views || 0,
-    uniqueViewers: v.unique_viewers || 0,
-    avgPct: Math.round(v.avg_percent_watched || 0),
-    finishes: v.finishes || 0,
-    captionPct: Math.round(v.caption_adoption || 0),
-    seekEvents: v.seek_events || 0,
-    bufferRate: Math.round((v.buffer_rate || 0) * 10) / 10,
-  }));
+  const videos = (data || []).map(toVideoRow);
 
   const handleSort = (col) => {
     if (sortCol === col) setSortDir(d => d === "desc" ? "asc" : "desc");

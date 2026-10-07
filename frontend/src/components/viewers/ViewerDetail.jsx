@@ -3,6 +3,8 @@ import SectionHeader from '../shared/SectionHeader';
 import FingerprintBadge from '../shared/FingerprintBadge';
 import IdentityBadge from '../shared/IdentityBadge';
 import { usePolling } from '../../hooks/usePolling';
+import { avatarInitial, avgEngagement, captionUsage, sessionsBeforeIdentification, behavioralInsights } from './viewerInsights';
+import { isLiveSession } from '../../utils/sessions';
 
 export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
   const { data, loading } = usePolling(`/api/analytics/viewers/${viewer.fingerprintId}`, 30000);
@@ -22,15 +24,14 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
     identifiedOn: data.viewer.identified_at ? new Date(data.viewer.identified_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.identifiedOn,
     firstSeen: data.viewer.first_seen ? new Date(data.viewer.first_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.firstSeen || '—',
     lastSeen: data.viewer.last_seen ? new Date(data.viewer.last_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : viewer.lastSeen || '—',
-    captionsAlwaysOn: viewer.captionsAlwaysOn ?? false,
     status: identified ? "identified" : "anonymous",
   } : viewer;
 
   // Use API data if available, fall back to viewer prop
   const sessions = (data?.sessions || []).map(s => ({
-    id: '#' + (s.session_id?.slice(0, 6) || '—'),
+    id: '#' + (s.session_id?.slice(0, 8) || '—'),
     session_id: s.session_id,
-    shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
+    shortId: '#' + (s.session_id?.slice(0, 8) || '—'),
     video: s.video_title || s.video_id,
     videoId: s.video_id,
     viewerId: s.viewer_id || viewer.identifiedAs || null,
@@ -41,7 +42,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
     embedUrl: s.embed_url || '',
     watchedPct: Math.round(s.percent_watched || 0),
     completed: !!s.completed,
-    isLive: s.embed_url?.includes('vidharbor.com'),
+    isLive: isLiveSession(s.session_id),
   }));
 
   const videos = (data?.videos || []).map(v => ({
@@ -55,7 +56,10 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
   const totalSessions = data?.viewer?.total_sessions || viewer.totalSessions;
   const totalWatchMins = Math.round(data?.viewer?.total_watch_mins || viewer.totalWatchMins || 0);
   const totalVideos = videos.length || viewer.totalVideos || 0;
-  const avgPct = data?.viewer?.avg_engagement ? Math.round(data.viewer.avg_engagement) : (viewer.avgWatchPct || 0);
+  const avgPct = data?.sessions ? avgEngagement(data.sessions) : (viewer.avgWatchPct || 0);
+  const captions = data?.sessions ? captionUsage(data.sessions) : (viewer.captionsAlwaysOn ? 'always' : 'off');
+  const preIdentSessions = sessionsBeforeIdentification(data?.sessions, data?.viewer?.identified_at);
+  const insights = data ? behavioralInsights(data) : [];
 
   return (
     <div>
@@ -82,7 +86,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
               color: identified ? "#0e1216" : V.textLight,
               fontWeight: 700, flexShrink: 0,
             }}>
-              {identified && resolvedViewer.identifiedAs ? resolvedViewer.identifiedAs.split(/[.@]/)[0][0].toUpperCase() : "?"}
+              {identified ? avatarInitial(resolvedViewer.identifiedAs) : "?"}
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -103,11 +107,24 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
         {identified ? (
           <div style={{ padding: "12px 16px", background: V.greenLight, border: "1px solid rgba(48,164,108,0.25)", borderRadius: V.cardRadius, fontSize: 12, color: V.green, lineHeight: 1.6 }}>
             <strong>Identity resolved{resolvedViewer.identifiedOn ? ` on ${resolvedViewer.identifiedOn}` : ''}</strong>{resolvedViewer.identifiedVia ? ` via ${resolvedViewer.identifiedVia}` : ''}.<br />
-            All {totalSessions} prior anonymous sessions from fingerprint <code style={{ background: "rgba(48,164,108,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>{resolvedViewer.fingerprintId}</code> have been retroactively attributed to this user.
+            {preIdentSessions > 0
+              ? <>{preIdentSessions === 1 ? '1 session' : `${preIdentSessions} sessions`} watched anonymously before identification {preIdentSessions === 1 ? 'was' : 'were'} retroactively attributed to this user via fingerprint </>
+              : <>All sessions from fingerprint </>}
+            <code style={{ background: "rgba(48,164,108,0.15)", padding: "1px 4px", borderRadius: 3, fontFamily: "monospace" }}>{resolvedViewer.fingerprintId}</code>
+            {preIdentSessions > 0 ? '.' : ' are attributed to this user.'}
           </div>
         ) : (
           <div style={{ padding: "12px 16px", background: V.bg, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, fontSize: 12, color: V.textMid, lineHeight: 1.6 }}>
             <strong>Not yet identified.</strong> This viewer's sessions are tracked by browser fingerprint only. If they log in or submit a form on an instrumented page, their identity will be retroactively linked to all sessions under <code style={{ fontFamily: "monospace" }}>{resolvedViewer.fingerprintId}</code>.
+          </div>
+        )}
+
+        {insights.length > 0 && (
+          <div style={{ marginTop: 10, padding: "12px 16px", background: V.amberLight, border: "1px solid rgba(245,158,11,0.3)", borderRadius: V.cardRadius, fontSize: 12, color: V.textMid, lineHeight: 1.6 }}>
+            <strong style={{ color: V.amber }}>Behavioral insight</strong>
+            <ul style={{ margin: "4px 0 0", paddingLeft: 18 }}>
+              {insights.map(text => <li key={text}>{text}</li>)}
+            </ul>
           </div>
         )}
 
@@ -118,7 +135,7 @@ export default function ViewerDetail({ viewer, onBack, onSelectSession }) {
             ["Videos watched", totalVideos, V.text],
             ["Total watch time", `${totalWatchMins}m`, V.text],
             ["Avg engagement", `${avgPct}%`, avgPct >= 70 ? V.green : avgPct >= 40 ? V.textMid : V.amber],
-            ["Captions", resolvedViewer.captionsAlwaysOn ? "Always on" : "Off", resolvedViewer.captionsAlwaysOn ? V.teal : V.textLight],
+            ["Captions", captions === 'always' ? "Always on" : captions === 'sometimes' ? "Sometimes" : "Off", captions === 'off' ? V.textLight : V.teal],
           ].map(([label, val, color]) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: V.textLight, marginBottom: 3 }}>{label}</div>

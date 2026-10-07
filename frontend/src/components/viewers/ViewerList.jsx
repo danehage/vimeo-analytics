@@ -4,6 +4,7 @@ import FingerprintBadge from '../shared/FingerprintBadge';
 import IdentityBadge from '../shared/IdentityBadge';
 import ErrorMessage from '../shared/ErrorMessage';
 import { usePolling } from '../../hooks/usePolling';
+import { avatarInitial } from './viewerInsights';
 
 export default function ViewerList({ onSelect, dateParams = '' }) {
   const [filter, setFilter] = useState("all");
@@ -129,7 +130,7 @@ export default function ViewerList({ onSelect, dateParams = '' }) {
                       color: viewer.status === "identified" ? "#0e1216" : V.textLight,
                       fontWeight: 700, flexShrink: 0,
                     }}>
-                      {viewer.status === "identified" && viewer.identifiedAs ? viewer.identifiedAs.split(/[.@]/)[0][0].toUpperCase() : "?"}
+                      {viewer.status === "identified" ? avatarInitial(viewer.identifiedAs) : "?"}
                     </div>
                     <div>
                       {viewer.status === "identified"

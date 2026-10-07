@@ -19,8 +19,23 @@ const ALLOWED_EVENT_TYPES = [
   'qualitychange', 'texttrackchange', 'volumechange',
   'bufferstart', 'bufferend', 'session_end'
 ];
+// Viewer IDs come from host pages (usually an email). Must start with a
+// letter/digit — the UI derives avatar initials from the first character.
+const VIEWER_ID_REGEX = /^[a-z0-9][^\s<>]{0,253}$/i;
 
-function validateEvent(body) {
+export const isValidViewerId = (v) => typeof v === 'string' && VIEWER_ID_REGEX.test(v);
+
+async function readJson(request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
+const badRequest = (body) => new Response(JSON.stringify(body), { status: 400 });
+
+export function validateEvent(body) {
   const errors = [];
 
   if (!body.session_id || !UUID_REGEX.test(body.session_id)) {
@@ -47,6 +62,9 @@ function validateEvent(body) {
   if (!body.video_id || typeof body.video_id !== 'string') {
     errors.push('video_id is required');
   }
+  if (body.viewer_id != null && !isValidViewerId(body.viewer_id)) {
+    errors.push('viewer_id must be a string under 255 characters starting with a letter or digit');
+  }
   if (body.event_id != null && !UUID_REGEX.test(body.event_id)) {
     errors.push('event_id must be a valid UUID');
   }
@@ -55,11 +73,12 @@ function validateEvent(body) {
 }
 
 export async function handleEvents(request, sql, { oembed = globalThis.fetch } = {}) {
-  const event = await request.json();
+  const event = await readJson(request);
+  if (!event || typeof event !== 'object') return badRequest({ error: 'Body must be a JSON object' });
 
   const errors = validateEvent(event);
   if (errors.length > 0) {
-    return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400 });
+    return badRequest({ error: 'Validation failed', details: errors });
   }
 
   // 1. event insert (idempotent if client supplied event_id)
@@ -89,10 +108,13 @@ export async function handleEvents(request, sql, { oembed = globalThis.fetch } =
 }
 
 export async function handleIdentify(request, sql) {
-  const { fingerprintId, viewerId, identifiedVia } = await request.json();
+  const { fingerprintId, viewerId, identifiedVia } = (await readJson(request)) || {};
 
-  if (!fingerprintId || !viewerId) {
-    return new Response(JSON.stringify({ error: 'fingerprintId and viewerId required' }), { status: 400 });
+  if (typeof fingerprintId !== 'string' || !fingerprintId || fingerprintId.length > 50 || !isValidViewerId(viewerId)) {
+    return badRequest({ error: 'fingerprintId and a valid viewerId are required' });
+  }
+  if (identifiedVia != null && (typeof identifiedVia !== 'string' || identifiedVia.length > 100)) {
+    return badRequest({ error: 'identifiedVia must be a string under 100 characters' });
   }
 
   // Step 1: attribute anonymous sessions to the now-known viewer

@@ -49,7 +49,12 @@ export function getSummarySql(filters = {}) {
         NULLIF(COUNT(DISTINCT session_id), 0), 1
       ), 100), 0) AS caption_adoption,
       COUNT(*) FILTER (WHERE event_type = 'seeked')::int AS seek_events,
-      COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes
+      COUNT(*) FILTER (WHERE event_type = 'qualitychange')::int AS quality_changes,
+      COUNT(*) FILTER (WHERE event_type = 'play')::int AS play_events,
+      COUNT(*) FILTER (WHERE event_type = 'pause')::int AS pause_events,
+      COUNT(*) FILTER (WHERE event_type = 'texttrackchange')::int AS caption_events,
+      COUNT(*) FILTER (WHERE event_type = 'volumechange')::int AS volume_events,
+      COUNT(*) FILTER (WHERE event_type = 'bufferstart')::int AS buffer_events
     FROM events
     ${deepWhere}
   `);

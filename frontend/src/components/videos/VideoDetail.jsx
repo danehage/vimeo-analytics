@@ -1,14 +1,23 @@
 import { V, fmtSecs } from '../../constants/theme';
 import SectionHeader from '../shared/SectionHeader';
 import { usePolling } from '../../hooks/usePolling';
+import { toVideoRow } from './VideoTable';
+import { isLiveSession } from '../../utils/sessions';
 
-export default function VideoDetail({ video, onBack, onSelectSession }) {
+export default function VideoDetail({ video: selected, onBack, onSelectSession }) {
+  // Opened via URL we only know the ID — look up the rollup row for the header stats
+  const needsLookup = selected.views === undefined;
+  const { data: allVideos } = usePolling(needsLookup ? '/api/analytics/videos' : null);
+  const found = allVideos?.find(v => v.video_id === selected.videoId);
+  const video = needsLookup
+    ? (found ? toVideoRow(found) : { ...toVideoRow({ video_id: selected.videoId }), title: allVideos ? selected.videoId : 'Loading…' })
+    : selected;
   const { data, loading } = usePolling(`/api/analytics/sessions?videoId=${video.videoId}&limit=100`, 30000);
 
   const sessions = (data?.sessions || []).map(s => ({
-    id: s.session_id?.slice(0, 6) || '—',
+    id: s.session_id?.slice(0, 8) || '—',
     session_id: s.session_id,
-    shortId: '#' + (s.session_id?.slice(0, 6) || '—'),
+    shortId: '#' + (s.session_id?.slice(0, 8) || '—'),
     video: s.video_title || s.video_id,
     videoId: s.video_id,
     viewerId: s.viewer_id || null,
@@ -23,7 +32,7 @@ export default function VideoDetail({ video, onBack, onSelectSession }) {
     captionsEnabled: (s.caption_events || 0) > 0,
     seeks: s.seek_events || 0,
     buffers: s.buffer_events || 0,
-    isLive: s.embed_url?.includes('vidharbor.com'),
+    isLive: isLiveSession(s.session_id),
   }));
 
   return (

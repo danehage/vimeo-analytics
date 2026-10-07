@@ -2,29 +2,6 @@ import { useState } from 'react';
 import { V, EVENT_COLORS } from '../constants/theme';
 import { usePolling } from '../hooks/usePolling';
 
-const MOCK_EVENTS = [
-  { event_type: "play", video_id: "v003", playhead: 0, timestamp: "2026-03-05T16:14:02Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "timeupdate", video_id: "v003", playhead: 5, timestamp: "2026-03-05T16:14:07Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "seeked", video_id: "v003", playhead: 330, timestamp: "2026-03-05T16:17:14Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "texttrackchange", video_id: "v003", playhead: 405, timestamp: "2026-03-05T16:20:47Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "pause", video_id: "v003", playhead: 560, timestamp: "2026-03-05T16:23:22Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "play", video_id: "v001", playhead: 0, timestamp: "2026-03-05T16:30:00Z", embed_url: "sharepoint.corp.com/marketing/videos" },
-  { event_type: "seeked", video_id: "v001", playhead: 38, timestamp: "2026-03-05T16:30:18Z", embed_url: "sharepoint.corp.com/marketing/videos" },
-  { event_type: "qualitychange", video_id: "v001", playhead: 38, timestamp: "2026-03-05T16:30:20Z", embed_url: "sharepoint.corp.com/marketing/videos" },
-  { event_type: "ended", video_id: "v001", playhead: 77, timestamp: "2026-03-05T16:31:17Z", embed_url: "sharepoint.corp.com/marketing/videos" },
-  { event_type: "play", video_id: "v003", playhead: 0, timestamp: "2026-03-05T16:35:01Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "bufferstart", video_id: "v003", playhead: 45, timestamp: "2026-03-05T16:35:46Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "bufferend", video_id: "v003", playhead: 45, timestamp: "2026-03-05T16:35:54Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "qualitychange", video_id: "v003", playhead: 62, timestamp: "2026-03-05T16:36:03Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "pause", video_id: "v003", playhead: 200, timestamp: "2026-03-05T16:39:21Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "volumechange", video_id: "v003", playhead: 200, timestamp: "2026-03-05T16:39:23Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "play", video_id: "v003", playhead: 200, timestamp: "2026-03-05T16:40:05Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "seeked", video_id: "v003", playhead: 490, timestamp: "2026-03-05T16:43:22Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "texttrackchange", video_id: "v003", playhead: 490, timestamp: "2026-03-05T16:43:24Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "ended", video_id: "v003", playhead: 821, timestamp: "2026-03-05T16:49:43Z", embed_url: "intranet.corp.com/learning/security" },
-  { event_type: "play", video_id: "v001", playhead: 0, timestamp: "2026-03-05T16:52:10Z", embed_url: "sharepoint.corp.com/marketing/videos" },
-];
-
 function fmtPlayhead(s) {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
@@ -34,7 +11,8 @@ function timeAgo(ts) {
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 7 * 86400) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function extractDomain(url) {
@@ -44,9 +22,9 @@ function extractDomain(url) {
 
 export default function EventFeed() {
   const [visible, setVisible] = useState(false);
-  const { data } = usePolling('/api/analytics/recent-events', 3000);
-  const events = data || MOCK_EVENTS;
-  const displayEvents = events.slice(0, 20);
+  const { data, loading, error } = usePolling('/api/analytics/recent-events', 3000);
+  const displayEvents = (Array.isArray(data) ? data : []).slice(0, 20);
+  const emptyMessage = loading ? "Connecting…" : error ? `Can't reach the event API (${error}). Retrying…` : "No events yet. Play a video on an instrumented page.";
 
   return (
     <div style={{ position: "fixed", bottom: 16, right: 16, zIndex: 100 }}>
@@ -95,10 +73,13 @@ export default function EventFeed() {
             <span style={{ fontSize: 11, color: V.textLight }}>Polling every 3s</span>
           </div>
           <div style={{ padding: 0 }}>
+            {displayEvents.length === 0 && (
+              <div style={{ padding: "16px", fontSize: 12, color: V.textLight }}>{emptyMessage}</div>
+            )}
             {displayEvents.map((ev, i) => {
               const color = EVENT_COLORS[ev.event_type] || V.textMuted;
               return (
-                <div key={i} style={{
+                <div key={ev.event_id || i} style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 10,

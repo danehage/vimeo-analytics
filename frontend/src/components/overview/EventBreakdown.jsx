@@ -4,29 +4,25 @@ import { usePolling } from '../../hooks/usePolling';
 
 const EVENT_ORDER = ['play', 'pause', 'seeked', 'texttrackchange', 'qualitychange', 'volumechange', 'bufferstart'];
 
+const SUMMARY_FIELD = {
+  play: 'play_events',
+  pause: 'pause_events',
+  seeked: 'seek_events',
+  texttrackchange: 'caption_events',
+  qualitychange: 'quality_changes',
+  volumechange: 'volume_events',
+  bufferstart: 'buffer_events',
+};
+
 export default function EventBreakdown({ dateParams = '' }) {
-  const { data } = usePolling('/api/analytics/recent-events', 10000);
-
-  // Count events from the recent-events endpoint as a proxy, or fall back
-  const counts = {};
-  if (data && Array.isArray(data)) {
-    data.forEach(ev => {
-      counts[ev.event_type] = (counts[ev.event_type] || 0) + 1;
-    });
-  }
-
-  // Also fetch the summary for total seek/buffer counts
   const summaryPath = dateParams
     ? `/api/analytics/summary?${dateParams}`
     : '/api/analytics/summary';
   const { data: summary } = usePolling(summaryPath);
 
-  // Build breakdown from summary data if available, otherwise from recent events
   const breakdown = EVENT_ORDER.map(event => ({
     event,
-    count: event === 'seeked' ? (summary?.seek_events || counts[event] || 0)
-      : event === 'bufferstart' ? (counts[event] || 0)
-      : (counts[event] || 0),
+    count: Number(summary?.[SUMMARY_FIELD[event]]) || 0,
     color: EVENT_COLORS[event] || V.textMuted,
   })).filter(e => e.count > 0);
 

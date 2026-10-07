@@ -53,7 +53,7 @@ export default function RetentionChart() {
     chartData = [];
     for (let i = 0; i < retentionData.retention.length; i += step) {
       const bucket = retentionData.retention[i];
-      // "Standard" estimate: simple linear decay from 100 to ~30
+      // Illustrative stand-in for an aggregate-only retention estimate (not real data)
       const standardEstimate = Math.max(Math.round(100 - (i / 100) * 70), 0);
       chartData.push({
         t: formatTime(bucket.bucket, duration),
@@ -66,7 +66,7 @@ export default function RetentionChart() {
   return (
     <div style={{ background: V.white, border: `1px solid ${V.border}`, borderRadius: V.cardRadius, padding: "20px 24px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 0 }}>
-        <SectionHeader title="Viewer retention" sub="Standard estimate vs Deep Analytics actual" />
+        <SectionHeader title="Viewer retention" sub="Illustrative aggregate estimate vs. Deep Analytics actual (measured)" />
         <select
           value={selectedVideo || ""}
           onChange={e => setSelectedVideo(e.target.value || null)}
@@ -97,7 +97,7 @@ export default function RetentionChart() {
             <XAxis dataKey="t" tick={{ fill: V.textLight, fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: V.textLight, fontSize: 10 }} axisLine={false} tickLine={false} unit="%" />
             <Tooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="existing" name="Standard" stroke={V.textLight} strokeWidth={1.5} fill="none" dot={false} strokeDasharray="4 3" />
+            <Area type="monotone" dataKey="existing" name="Aggregate estimate (illustrative)" stroke={V.textLight} strokeWidth={1.5} fill="none" dot={false} strokeDasharray="4 3" />
             <Area type="monotone" dataKey="deep" name="Deep Analytics" stroke={V.teal} strokeWidth={2.5} fill="url(#deepGrad)" dot={false} />
           </AreaChart>
         </ResponsiveContainer>
